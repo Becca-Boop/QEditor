@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>WEARABLE</h3>
+    <p>This template allows you to add clothing, jewelry, backpacks, etc. to your game.</p>
+    
+    <p>Note that using the WEARABLE template automatically includes the TAKEABLE template for your object.</p>
+    
+    <p>Garments can be assigned to layers and slots. Slots are where the item is worn. Each slot is a string, for example “head”. At this point, we need to make a design decision - how are we going to divide the body up? This is up to you. For simplicity, you might say: feet, lower, upper and head. Trousers cover the lower body, so in the wear slots section, add “lower”. However, it is up to you - you just need to be consistent!</p>
+    
+    <p>As well as slots, clothing has layers. Trousers might go in layer 2, whilst underwear obviously worn underneath might go in layer 1. The player will be unable to put underpants on if he is already wearing trousers, but could take the trousers off, then put the underwear on, then put the trousers back on.</p>
+
+    <p>And any garment with no slots can be worn without restrictions. And you may choose to do this for all the garments in your game, and not worry about what what is worn where!</p>
+
+    <p>Layer zero is special; it is effectively all layers. Say you have a pair of shorts that cannot be worn under trousers or over underpants, you can set its layer to 0.</p>
+
+    <p>You can add "testWear" and "testRemove" functions to an object; these will run before a garment is worn or removed; if they return false the action is aborted. They should print a message saying why in that case.</p>
+
+    <p>You can add "afterWear" and "afterRemove" functions to an object; these trigger after the object is put on or taken off, and take the character involved as an attribute.</p>
+
+    <hr/>    
+    <p><a href="{% url 'edit:help' 'home' %}">Help home</a></p>
+
+
+{% endblock %}
+

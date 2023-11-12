@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>Backing Up</h3>
+    <p><i>It is a good idea to back-up your game on a regular basis; bad things do happen</i>.</p>
+    <p>The file you need to back up is <code>db.sqlite3</code>, and is in the QuestJS root directory.</p>
+    <p>You need to decide for yourself how often you need to back-up. If you are working eight hours a day on your game, a daily back-up is advised. If you just spend a few hours a week, a monthly may be more reasonable. Think about how much effort you will have lost if you hard drive dies just before your next back-up, and compare that to the effort of doing each back-up.</p>
+    <p>You should save the file on another computer. An easy way to do that is to e-mail it to yourself, or to attach it to a draft e-mail.</p>
+    
+    <h3>Restoring</h3>
+    <p>Restoring your game is a simple matter of installing QuestJS, and then copying the <code>db.sqlite3</code> file into the QuestJS root directory.</p>
+    
+    <h3>Notes</h3>
+    <p>This process also allows you to move your game to a new computer. Just install the editor on the new computer, and transfer across the <code>db.sqlite3</code> file. I would guess this would work even when moving between operating systems, say from MacOS to Linux, as long as the <code>db.sqlite3</code> file is formatted the same across both.</p>
+    
+    <hr/>    
+    <p><a href="{% url 'edit:help' 'home' %}">Help home</a></p>
+
+
+{% endblock %}
+

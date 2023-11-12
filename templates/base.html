@@ -1,0 +1,34 @@
+{% load helpers %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'edit/icons/favicon.png' %}" />
+    <link rel="stylesheet" href="{% static 'edit/style.css' %}" type="text/css">
+    <title>QuestJS Editor</title>
+    <script>
+      function submit_page(page) {
+        document.querySelector('#page').value = page
+        document.forms[0].requestSubmit()
+      }
+
+      function template_button(page) {
+        document.querySelector('#page').value = page
+        document.querySelector('#template').value = 'yes'
+        document.forms[0].requestSubmit()
+      }
+    </script>
+  </head>
+  <body>
+    <div id="title">The Quest JS Editor</div>
+    <div class="main">
+      {% block content %}
+        <!-- default content text (typically empty) -->
+      {% endblock %}
+    </div>
+    <div id="footer">
+    
+    </div>
+  </body>
+</html>

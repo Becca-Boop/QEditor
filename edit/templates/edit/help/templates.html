@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>Templates</h3>
+    <p>Templates are a way to quickly add functionality to an item. If you want the player to be able to pick up an item, that will require a lot of attributes for the item. The TAKEABLE template does that for you.</p>
+    <p>Click the "Add" button to add a new template to this object. A new button will appear at the top, and you can use that to go to the section for attributes soecific to that template.</p>
+    <p>You are currently not able to remove a template.</p>
+
+    <hr/>    
+    <p><a href="{% url 'edit:help' 'home' %}">Help home</a></p>
+
+
+{% endblock %}
+

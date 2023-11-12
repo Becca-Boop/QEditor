@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>Setting Up The QuestJS Editor Web Server</h3>
+    <p>The editor uses a web server to create web pages and connect to a database.</p>
+
+    <p>The web server is very basic, so does not need much configuring or use up resources on your computer. It is secure because it can only be accessed from the computer it is running on. In theory you could modify it so anyone can access it, but that would be a very bad idea!</p>
+
+    <p>The web server comes with an administrator section. You can see it <a href="http://localhost:3000/admin/">here</a>. You will need the password you gave when you installed the editor. You can edit data in the database here, but I would very must advise against it.</p> 
+    
+    
+    <hr/>    
+    <p><a href="{% url 'edit:help' 'home' %}">Help home</a></p>
+
+
+{% endblock %}
+

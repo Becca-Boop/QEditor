@@ -1,0 +1,54 @@
+{% extends "base_validate.html" %}
+{% load helpers %}
+
+{% block content %}
+ 
+  
+  <form action="{% url 'stocks:order_created' quote.id %}" method="post">
+  {% csrf_token %}
+  {% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+  <table>
+  
+  <tr><td><b>Quantity:</b></td><td>{{ quote.quantity }}</td></tr>
+  <tr><td><b>Price:</b></td><td>{{ quote.price }}</td></tr>
+  <tr><td><b>Specification:</b></td><td>{{ quote.specification }}</td></tr>
+  <tr><td><b>Terms:</b></td><td>{{ quote.terms_s }}</td></tr>
+  <tr><td><b>Comment:</b></td><td>{{ quote.comment }}</td></tr>
+    
+  <tr><td>
+  <b>Our reference:</b>
+  </td><td>
+  <input type="text" name="our_ref" id="our_ref" data-valid="yes"/>
+  </td></tr>
+
+  <tr><td>
+  <b>Their reference:</b>
+  </td><td>
+  <input type="text" name="their_ref" id="their_ref" data-valid="yes"/>
+  </td></tr>
+
+  <tr><td>
+  <b>Courier reference (optional):</b>
+  </td><td>
+  <input type="text" name="courier_ref" id="courier_ref"/>
+  </td></tr>
+
+
+    {% text_row 'Our reference' 'our_ref' quote True %}
+    {% text_row 'Their reference' 'their_ref' quote True %}
+    {% text_row 'Courier reference (optional)' 'courier_ref' quote True %}
+    {% date_row 'Date required (leave blank if ASAP)' 'date_required' quote False %}
+
+
+
+  <tr><td>
+  <b>Date required (leave blank if ASAP):</b>
+  </td><td>
+  <input type="date" name="date_required" id="date_required"/>
+  </td></tr>
+
+  {% submit_row quote %}
+  <table>
+  </form>
+
+{% endblock %}

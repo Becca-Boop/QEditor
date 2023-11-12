@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>QuestJS Editor Help</h3>
+    <p>Welcom to the QuestJS Editor Help!</p>
+    <p>If you can see something about "extends" and "base.html" at the top of this page, you are viewing the raw page. You are better viewing the page via the editor's web server. If you need help on setting that up, see <a href="{% url 'edit:help' 'web_server' %}">here</a></p>
+    
+    <h4>Using the Editor</h4>
+    <ul>
+    <li>
+    <a href="{% url 'edit:help' 'basics' %}">Basic usage of the editor</a>
+    </li>
+    <li>
+    <a href="{% url 'edit:help' 'backup' %}">Backing up and restoring</a>
+    </li>
+    <li>
+    <a href="{% url 'edit:help' 'tech' %}">Technical aspects of the editor</a>
+    </li>
+    </ul>
+
+    <h4>Creating Games</h4>
+    <ul>
+    <li>
+    <a href="{% url 'edit:help' 'wearable' %}">The wearable template</a>
+    </li>
+    </ul>
+
+
+{% endblock %}
+

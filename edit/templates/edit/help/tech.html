@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+
+{% block content %}
+    <h3>Technical Aspects Of The QuestJS Editor Web Server</h3>
+    <p>You do not need to read this to use the editor; it describes the internal workings. However, it may be of interest, especially if you are involved in maintaining it!</p>
+
+    <h4>Python/Django</h4>
+    <p>The system is written in Python, using the Django framework. The advantage of Python/Django is the simplicity of getting it up and running, and the ease of database access. I did try building it in JavaScript, using Node.js, which would mean the editor was in the same library as the game engine, but database access is very awkward because of having to wait for the result, and there are various packages required making setting up rather more involved.</p>
+
+    <h4>Models</h4>
+    <p>A QuestJS object can have any number of attributes, making it difficult to store in a standard database, which needs pre-defined table columns. The solution here is to store the attributes in a table of their own, with the value (as a string) and links to the object and to some meta-data about the attribute type. The class for that is QAttr.</p>
+    
+    <p>A Quest object is contained in a class call QObject.</p>
+    
+    <p>The meta-data for an attribute is in MetaAttr. Each attribute meta-data has itself meta-data about the type of attribute; this is its type, and is held in an array internally, rather than the database.</p>
+    
+    <p>Suppose we have an item that is a hat. That object has an alias, "your hat". This is stored in a QAttr that has the value, "your hat", with a link to the item and a link to a MetaAttr for the "alias" attribute. The MetaAttr has an attr_type which is "str", indicating that this attribute is handled as a string of up to 50 characters.
+    </p>
+    
+    <p>The attr_type has a number of attributes, some of which are lambdas, i.e. functions. This allows the system to retrieve a value and convert it to the correct type, to display the appropriate widget and so on.</p>
+    
+    <p>Each MetaAttr belongs to a MetaPage, and a page corresponds to a section in the editor.</p>
+    
+    <h4>Categories</h4>
+    <p>QObjects, MetaPages and MetaAttrs all have categories, which is the type of object it is.</p>
+    <dl>
+    <dt>item</dt><dd>An object that is an item</dd>
+    <dt>room</dt><dd>An object that is a location</dd>
+    <dt>sttg</dt><dd>Represents the settings; attributes here will apply to the "settings" in the game</dd>
+    <dt>game</dt><dd>Represents other in-game settings</dd>
+    <dt>opts</dt><dd>Represents settings for the editor</dd>
+    </dl>
+    
+    <p>There should only be one each of the sttg, game and opts objects.</p>
+    
+    <p>Note that items and locations are kept quite distinct, even though in the final game they are all the same thing. I think this helps to keep things simple for users, without any real drawback. When I have items that can be entered I have found it better to have two distinct objects; one a item that can be examine from outside, the other the location that the player goes into.</p>
+    
+    <hr/>    
+    <p><a href="{% url 'edit:help' 'home' %}">Help home</a></p>
+
+
+{% endblock %}
+

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+
+<table width="80%">
+  <tr>
+    <td style="vertical-align:top" width="50%">
+        <h2>Locations ({{ room_list|length }})</h2>
+        {% for obj in room_list %}
+            <h4>
+            <a href="{% url 'edit:object_detail' obj.id %}" target="_blank">{{ obj.display_name }}</a>
+            </h4>
+        {% endfor %}
+    </td>
+    <td style="vertical-align:top">
+        <h2>Items ({{ item_list|length }})</h2>
+        {% for obj in item_list %}
+            <h4>
+            <a href="{% url 'edit:object_detail' obj.id %}" target="_blank">{{ obj.display_name }}</a>
+            </h4>
+        {% endfor %}
+    </td>
+  </tr>
+</table>
+
+
+
+<p>Click <a href="{% url 'edit:settings' %}" target="_blank">here</a> to edit game settings</p>
+<p>Click <a href="{% url 'edit:play' %}" target="_blank">here</a> to play the game</p>
+<p>Click <a href="{% url 'edit:object_list' %}">here</a> to update this page</p>
+<p>Click <a href="{% url 'edit:reset' %}">here</a> to reset the database (all changes will be lost)</p>
+<p>Click <a href="/admin" target="_blank">here</a> to go to the admin page</p>
+{% endblock %}
+

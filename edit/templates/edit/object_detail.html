@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% load helpers %}
+
+{% block content %}
+
+  <h2>Editing 
+  {% if qobject.is_room %}Location{% else %}Item{% endif %}: <i>{{ qobject.name }}</i></h2>
+
+  <form action="{% url 'edit:object_edited' qobject.id %}" method="post">
+  {% csrf_token %}
+  <input type="hidden" id="template" name="__template__"/>
+  <input type="hidden" id="page" name="__page__"/>
+  <input type="hidden" id="page" name="__old_page__" value="{{page}}"/>
+
+  {% for opt in pages %}
+    {% page_button opt page %}
+  {% endfor %}
+  <input type="button" value="Close" onclick="submit_page('Close')"/>
+  <br/>
+  {% help_link page.help_link %}
+  <br/>
+
+  <table>
+  {% for mattr in mattrs %}
+    {% attr_row mattr qobject %}
+  {% endfor %}
+  </table>
+  
+  </form>
+  
+  <script>
+    const input = document.getElementById("name-input")
+    if (input) {
+      const regex = new RegExp("^[0-9a-zA-Z_]*$")
+      input.addEventListener("beforeinput", (event) => {
+        if (event.data != null && !regex.test(event.data)) 
+          event.preventDefault()
+      })
+    }
+  </script>
+  
+  
+{% endblock %}
