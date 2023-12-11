@@ -1,37 +1,113 @@
 {% extends "base.html" %}
 
 {% load static %}
+{% load helpers %}
 
 {% block content %}
 
-
 <table width="80%">
   <tr>
-    <td style="vertical-align:top" width="50%">
-        <h2>Locations ({{ room_list|length }})</h2>
-        {% for obj in room_list %}
-            <h4>
-            <a href="{% url 'edit:object_detail' obj.id %}" target="_blank">{{ obj.display_name }}</a>
-            </h4>
-        {% endfor %}
-    </td>
-    <td style="vertical-align:top">
-        <h2>Items ({{ item_list|length }})</h2>
-        {% for obj in item_list %}
-            <h4>
-            <a href="{% url 'edit:object_detail' obj.id %}" target="_blank">{{ obj.display_name }}</a>
-            </h4>
-        {% endfor %}
+    <td>
+      Add new location: <input type="text" id="add-obj"/> [<span class="clickable" onclick="add_obj()">Add</span>]
     </td>
   </tr>
+  <tr>
+    <td>
+      Items: [<span class="clickable" onclick="showAll()">Show all</span>] [<span class="clickable" onclick="hideAll()">Hide all</span>]
+    </td>
+  </tr>
+  {% for obj in room_list %}
+      <tr><td>
+      <svg width="12" height="12" id="svg-hide-for-{{ obj.name }}" class="svg-hide" style="display:none">
+        <circle cx="6" cy="6" r="5" stroke="green" stroke-width="1" fill="yellow" onclick="hideList('{{ obj.name }}')"/>
+      </svg>
+      <svg width="12" height="12" id="svg-show-for-{{ obj.name }}" class="svg-show">
+        <circle cx="6" cy="6" r="5" stroke="green" stroke-width="1" fill="blue" onclick="showList('{{ obj.name }}')"/>
+      </svg>
+
+      <a href="{% url 'edit:object_detail' obj.id %}" target="_blank">{{ obj.display_name }}</a>
+      <ul id="list-for-{{ obj.name }}" style="display:none">
+      {% for item in obj.get_contents %}
+        <li><a href="{% url 'edit:object_detail' item.id %}" target="_blank">{{ item.display_name }}</a></li>      
+      {% endfor %}
+      </ul>
+      </td></tr>
+  {% endfor %}
+
+
 </table>
 
 
 
+
+
+
+
+  <form action="{% url 'edit:room_added' %}" method="post" target="_blank" id="add-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-obj-name" name="__name__"/>
+  </form>
+
+
+{% warnings %}
+
+
+
+<p>Click <a href="/edit/help/home" target="_blank">here</a> for help</p>
 <p>Click <a href="{% url 'edit:settings' %}" target="_blank">here</a> to edit game settings</p>
 <p>Click <a href="{% url 'edit:play' %}" target="_blank">here</a> to play the game</p>
 <p>Click <a href="{% url 'edit:object_list' %}">here</a> to update this page</p>
 <p>Click <a href="{% url 'edit:reset' %}">here</a> to reset the database (all changes will be lost)</p>
 <p>Click <a href="/admin" target="_blank">here</a> to go to the admin page</p>
-{% endblock %}
 
+<div id="overview-hide" onclick="showOverview()" class="clickable" style="display:none"><p>Click here for a quick overview</p></div>
+<div id="overview-show" onclick="hideOverview()" class="clickable">
+  <h4>A quick overview (click to hide)</h4>
+  <p>
+  This is the list view for you game. To help keep you organised, all locations are assigned to regions.
+  </p>
+</div>
+
+
+
+
+<script>
+
+  function hideList(name) {
+    document.querySelector('#list-for-' + name).style.display = 'none'
+    document.querySelector('#svg-hide-for-' + name).style.display = 'none'
+    document.querySelector('#svg-show-for-' + name).style.display = 'inline'
+  }
+
+  function showList(name) {
+    document.querySelector('#list-for-' + name).style.display = 'block'
+    document.querySelector('#svg-hide-for-' + name).style.display = 'inline'
+    document.querySelector('#svg-show-for-' + name).style.display = 'none'
+  }
+
+  function hideAll() {
+    for (const el of document.querySelectorAll('svg.svg-show')) el.style.display = 'inline'
+    for (const el of document.querySelectorAll('svg.svg-hide')) el.style.display = 'none'
+    for (const el of document.querySelectorAll('ul')) el.style.display = 'none'
+  }
+
+  function showAll() {
+    for (const el of document.querySelectorAll('svg.svg-show')) el.style.display = 'none'
+    for (const el of document.querySelectorAll('svg.svg-hide')) el.style.display = 'inline'
+    for (const el of document.querySelectorAll('ul')) el.style.display = 'block'
+  }
+
+  function showOverview() {
+    document.querySelector('#overview-hide').style.display = 'none'
+    document.querySelector('#overview-show').style.display = 'block'
+  }
+
+  function hideOverview() {
+    document.querySelector('#overview-hide').style.display = 'block'
+    document.querySelector('#overview-show').style.display = 'none'
+  }
+
+</script>
+
+
+{% endblock %}

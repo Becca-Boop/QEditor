@@ -19,6 +19,13 @@ urlpatterns = [
     path("object/<int:object_id>/", views.object_page, name="object_detail"),
     path("object/<int:object_id>/page/<str:page_id>", views.object_page, name="object_page"),
     path("object/<int:object_id>/edited", views.object_edited, name="object_edited"),
+    
+    path("object/region_added", views.region_added, name="region_added"),
+    path("object/room_added", views.room_added, name="room_added"),
+    path("object/<int:object_id>/item_added", views.item_added, name="item_added"),
+    path("object/item_added", views.item_added_nowhere, name="item_added_nowhere"),
+    path("object/<int:object_id>/exit_added", views.exit_added, name="exit_added"),
+    
     path("settings", views.settings, name="settings"),
     
     path("object/settings.js", views.settings_js, name="settings_js"),

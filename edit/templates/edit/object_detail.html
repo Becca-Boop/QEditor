@@ -5,7 +5,7 @@
 {% block content %}
 
   <h2>Editing 
-  {% if qobject.is_room %}Location{% else %}Item{% endif %}: <i>{{ qobject.name }}</i></h2>
+  {% if qobject.category == 'room' %}location{% else %}{{qobject.category }}{% endif %}: <i>{{ qobject.title_name }}</i></h2>
 
   <form action="{% url 'edit:object_edited' qobject.id %}" method="post">
   {% csrf_token %}
@@ -29,16 +29,38 @@
   
   </form>
   
-  <script>
-    const input = document.getElementById("name-input")
-    if (input) {
-      const regex = new RegExp("^[0-9a-zA-Z_]*$")
-      input.addEventListener("beforeinput", (event) => {
-        if (event.data != null && !regex.test(event.data)) 
-          event.preventDefault()
-      })
-    }
-  </script>
-  
-  
+  <!--  Form for creating new objects  -->
+  <form action="{% url 'edit:item_added' qobject.id %}" method="post" target="_blank" id="add-item-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-item-name" name="__name__"/>
+  </form>
+
+  <!--  Form for creating new exits  -->
+  <form action="{% url 'edit:exit_added' qobject.id %}" method="post" target="_blank" id="add-exit-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-exit-dest" name="__name__"/>
+  <input type="hidden" id="add-exit-dir" name="__dir__"/>
+  <input type="hidden" id="add-exit-link" name="__link__"/>
+  </form>
+
+
+
+
+  <div id="overview-hide" onclick="showOverview()" class="clickable"><p>Click here for a quick overview</p></div>
+
+  <div id="overview-show" onclick="hideOverview()" class="clickable" style="display:none">
+    <h4>A quick overview (click to hide)</h4>
+    <p>
+    This is the view for one object in your game.
+    </p>
+    <p>
+    It is divided up into pages, Home, Naming, etc., just click on a heading to go to that page. Note that going to a page will save any changes to the database. But also note that changes are <i>not</i> saved until you do that. When you have done with this object, click the Close page, which will close this browser tab, but will first save any changes.
+    </p>
+    <p>
+    Some pages have links to their own help files, which will open in a new tab.
+    </p>
+  </div>
+
+
+
 {% endblock %}

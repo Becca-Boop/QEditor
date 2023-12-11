@@ -6,7 +6,7 @@
   <head>
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'edit/icons/favicon.png' %}" />
     <link rel="stylesheet" href="{% static 'edit/style.css' %}" type="text/css">
-    <title>QuestJS Editor</title>
+    <title>{% if title %}{{ title }}{% else %}QuestJS Editor{% endif %}</title>
     <script>
       function submit_page(page) {
         document.querySelector('#page').value = page
@@ -18,10 +18,103 @@
         document.querySelector('#template').value = 'yes'
         document.forms[0].requestSubmit()
       }
+      
+      function add_obj(option, loc) {
+        console.log('in add_obj for ' + option + ', ' + loc)
+        const name = document.querySelector('#add-' + option + '-' + loc).value
+        if (name) {
+          console.log(name)
+          document.querySelector('#add-' + option + '-name').value = name
+          document.querySelector('#add-' + option + '-' + loc).value = ''
+          if (option === 'room') {
+            document.querySelector('#add-room-region').value = loc
+          }
+          document.querySelector('#add-' + option + '-form').requestSubmit()
+        }
+        else if (loc) {
+          alert('You need to provide a name for an item before adding it to the location')
+        }
+        else {
+          alert('You need to provide a name for a new ' + option)
+        }
+      }
+      
+
+
+
+
+    function hideList(name) {
+      document.querySelector('#list-for-' + name).style.display = 'none'
+      document.querySelector('#svg-hide-for-' + name).style.display = 'none'
+      document.querySelector('#svg-show-for-' + name).style.display = 'inline'
+    }
+
+    function showList(name) {
+      document.querySelector('#list-for-' + name).style.display = 'block'
+      document.querySelector('#svg-hide-for-' + name).style.display = 'inline'
+      document.querySelector('#svg-show-for-' + name).style.display = 'none'
+    }
+
+    function hideAll() {
+      for (const el of document.querySelectorAll('svg.svg-show')) el.style.display = 'inline'
+      for (const el of document.querySelectorAll('svg.svg-hide')) el.style.display = 'none'
+      for (const el of document.querySelectorAll('.show-hide')) el.style.display = 'none'
+    }
+
+    function showAll() {
+      for (const el of document.querySelectorAll('svg.svg-show')) el.style.display = 'none'
+      for (const el of document.querySelectorAll('svg.svg-hide')) el.style.display = 'inline'
+      for (const el of document.querySelectorAll('.show-hide')) el.style.display = 'block'
+    }
+
+    function showOverview() {
+      document.querySelector('#overview-hide').style.display = 'none'
+      document.querySelector('#overview-show').style.display = 'block'
+    }
+
+    function hideOverview() {
+      document.querySelector('#overview-hide').style.display = 'block'
+      document.querySelector('#overview-show').style.display = 'none'
+    }
+
+
+
+    function create_exit(dr) {
+      console.log('Exit: ' + dr)
+      const dest = document.querySelector('#destination').value
+      if (dest !== '-1') {
+        console.log(dest)
+        document.querySelector('#add-exit-dir').value = dr
+        document.querySelector('#add-exit-dest').value = dest
+        document.querySelector('#add-exit-link').value = document.querySelector('#exit-is-link').value
+        document.querySelector('#add-exit-form').requestSubmit()
+      }
+      else {
+        alert('You need to provide a destination for a new exit')
+      }
+    }
+
+
+
+    window.addEventListener("load", function() {
+      const regex = new RegExp("^[0-9a-zA-Z_]*$")
+      console.log('here')
+      console.log(document.querySelectorAll('.restricted-input'))
+      for (const node of document.querySelectorAll('.restricted-input')) {
+        console.log('node')
+        console.log(node)
+        node.addEventListener("beforeinput", (event) => {
+          if (event.data != null && !regex.test(event.data)) 
+            event.preventDefault()
+        })
+      }
+    })
+    
+    
     </script>
   </head>
   <body>
-    <div id="title">The Quest JS Editor</div>
+    <div id="title">The QuestJS Editor</div>
     <div class="main">
       {% block content %}
         <!-- default content text (typically empty) -->

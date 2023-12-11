@@ -1,0 +1,98 @@
+The Example Game
+
+Fire up the web server, and then go to the home page, probably http://localhost:3000/edit/object.
+
+The home page gives you an overview of the locations and items in your game. From here you can access each one and create new ones too.
+
+Regions
+
+All locations are assigned to regions. This is primarily to help keep you organised, and how you distribute loations between regions is up to you. For a small game with only a dozen locations you might want to put every location in one region. For big games, put them into regions in a way that makes sense to you - a way that will make it easy to find a location you have forgotten the name of!
+
+The example game has two regions, "inside" and "outside". To the right of each name is a triangle; click the triangle to show or hide the locations in that region. If there is a circle there instead of a triangle, then there are no locations in this region.
+
+There is also a "Nowhere"; this is for items not assigned to a location (behind the scenes, the "loc" attribute of these items is not set).
+
+Note that you can access the region of a location in your game, though there is nothing by default that does that - you could have the sky present in the location is outside, and walls present if it is inside - but that is beyond the scope of this introduction.
+
+Creating Regions
+
+You can create a new region by typing the name in the box at the top and clicking "Add" to the right of that. It will not let you put in any characters other than letters, numbers and underscores, and, although it will let you, you should not start a region with a digit.
+
+When you do that, you will be taken to a new browser tab for your new region.
+
+
+Edit Regions
+
+Click the name of a region, and a new tab will appear with details of the region.
+
+Regions do not have much about them, but you can add some notes to remind yourself what happens here, how it happens and what you still need to do. Or just leave it blank. What you write here will be saved in the database, but will not get exported into your game.
+
+Tick the "Expanded" box to have the region start with its locations shown on the home page. The example game has this set for the "inside" refion and not for the "outside" region, which is why you could see the locations for the former listed when you started,
+
+To save your changes, you need to click "Close".
+
+You can also change the name of the region, however... After clicking "Close" you will need to reload the home page to see the change, and you will find all the locations that belong to this region have disappeared, because they are still assigned to the old name. So changing the name of a region that has locations assigned is a bad idea.
+
+
+
+Locations
+
+Locations are places the character can visit. The editor keeps locations and items quite separate, though in the game they are actually the same thing.
+
+For the example game, you should see three locations in the "inside" region on the home page.
+
+Locations work just like regions, in that you can show or hide the things they contain by clicking the triangle. Or, if a location has no items - like the hall - there will be a circle instead of a triangle.
+
+Creating Locations
+
+You can create a new location by typing the name in the box at the bottom of the region you want it in, and clicking "Add" to the right of that. It will not let you put in any characters other than letters, numbers and underscores.
+
+When you do that, you will be taken to the location's own browser tab.
+
+
+Editing Locations
+
+Click the name of a location, and a new tab will appear with details of the location.
+
+There is a lot more there than for regions, and it is spread across several pages. You can move between pages by clicking the tabs at the top, "Home", "Naming", "Descriptions" and so on. Any changes you make will only be saved when you go to another page.
+
+Note that, like with regions, the last tab is "Close". This will save your changes and close the location too.
+
+The home tab has the basics - such as the name of the location. As with regions, if you change the name of a location that contains things, those things will get lost.
+
+You can change the region a location is in here. You can see a list of items in this location - and click on them to see details for the item. It will open in a new browser tab, so changes are not lost. You can also add a new item to this location.
+
+Finally, as with regions, you have a place to make notes about the location.
+
+
+Exits
+
+
+Items
+
+Items are all the things in your game that are not locations or exits; that could be anything from a hat, to an innkeeper, to the sky. 
+
+Creating Items
+
+You can create a new item by typing the name in the box at the bottom of the location you want it in, or the "Nowhere" box on the home page, and clicking "Add" to the right of that. It will not let you put in any characters other than letters, numbers and underscores.
+
+When you do that, you will be taken to the item's own browser tab.
+
+Editing Items
+
+Click the name of an item, and a new tab will appear with details of the item.
+
+There is even more here than there is for locations, and your choices can add even more. As with locations,, you can move between pages by clicking the tabs at the top, "Home", "Naming", "Descriptions" and so on. Any changes you make will only be saved when you go to another page. As usual, the last tab is "Close". This will save your changes and close the location too.
+
+The home tab has the basics - such as the name of the item. As with locations, you can add items, so one item can contain any number of other items. Again, if you change the name of an item that contains things, those things will get lost.
+
+Why do items have an "Exits" page? Locations have exits that sent up a conduit from one place to another. Exits for items are quite different, they connect the item to an existing exit. Say a location has a ladder up to the attic. The ladder would need to be added as an item. On the ladder's "Exits" page, give it a "
+
+Item Templates
+
+Templates are how QuestJS handles standard types. On the "Templates", you can make an item an NPC just by clicking the "Add" button. When you do that, a new tab will appear, with a whole new bunch of attributes.
+
+
+Back to the Home Page
+
+The home page has links to various other parts, including the help files. 

@@ -44,24 +44,25 @@ def help_link(page, name = None):
 @register.simple_tag
 def attr_row(mattr, qobject, edit=True):
     # check if applicable
-    if not test_rules(qobject, mattr):
+    settings = QObject.get_settings()
+    if not test_rules(qobject, settings, mattr):
         return ''
         
     value = qobject.get_attr(mattr.name)
-    widget = mattr.get_type()
+    t = mattr.get_type()
     
-    html = widget[3]
+    html = t.widget
     if isinstance(html, str):
         html = html.replace('*name*', mattr.name).replace('*value*', str(value))
     else:
-        html = html(mattr, value)
+        html = html(mattr, value, qobject)
 
     s = '<tr title="' + mattr.help_text + '">'
     s += '<td><b>' + mattr.display_name + '</b></td><td>'
     if not edit:
         s += value
         s += '</td><td>'
-    elif widget[2]:
+    elif t.big_widget:
         s += '</td><td>'
         s += mattr.help_text
         s += '</td></tr><tr><td colspan="3">' + html
@@ -74,3 +75,66 @@ def attr_row(mattr, qobject, edit=True):
     
     
     
+@register.simple_tag
+def warnings():
+    duplicates = QObject.get_duplicates()
+    #print(duplicates)
+    if duplicates:
+        return mark_safe('<div class="warning">WARNING: Duplicated object names: ' + ', '.join(duplicates) + '</div>')
+    else:
+        return 'All good'
+
+
+
+
+@register.simple_tag
+def hier_shape(name, flag):
+    return hier_triangle(name) if flag else hier_circle(name)
+
+
+@register.simple_tag
+def hier_triangle(name):
+    s = ''
+    s += '<svg width="12" height="12" id="svg-hide-for-' + name + '" class="svg-hide" style="display:none">'
+    s += '  <polygon points="1,3 6,11 11,3" stroke="green" stroke-width="1" fill="yellow" onclick="hideList(\'' + name + '\')"/>'
+    s += '</svg>'
+    s += '<svg width="12" height="12" id="svg-show-for-' + name + '" class="svg-show">'
+    s += '  <polygon points="3,1 10,6 3,11" stroke="green" stroke-width="1" fill="blue" onclick="showList(\'' + name + '\')"/>'
+    s += '</svg>'
+    return mark_safe(s)
+
+
+
+@register.simple_tag
+def hier_circle(name):
+    s = ''
+    s += '<svg width="12" height="12">'
+    s += '<circle cx="6" cy="6" r="5" stroke="green" stroke-width="1" fill="grey" />'
+    s += '</svg>'
+    return mark_safe(s)
+
+ 
+
+
+
+@register.simple_tag
+def hier_obj(obj):
+    flag = obj.has_contents()
+    s = ''
+    s += '<li>'
+    s += hier_shape(obj.name, flag)
+
+    s += '  <a href="/edit/object/' + str(obj.id) + '" target="_blank">'
+    if obj.category == 'room':
+        s += '<b>' + obj.display_name() + '</b>'
+    else:
+        s += obj.display_name()
+    s += '</a>'
+    if flag:
+        s += '  <ul id="list-for-' + obj.name + '" style="display:none" class="show-hide">'
+        for item in obj.get_contents():
+            s += hier_obj(item)
+        s += '</ul>'
+
+    s += '</li>'
+    return mark_safe(s)

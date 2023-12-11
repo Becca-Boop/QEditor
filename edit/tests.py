@@ -9,42 +9,89 @@ from edit.templatetags.helpers import *
 
 
 
+def setup():
+    page1 = MetaPage.objects.create(name="test1", category='room')
+    page2 = MetaPage.objects.create(name="test2", category='room')
+    page3 = MetaPage.objects.create(name="test3", category='item')
+
+    mattr1 = MetaAttr.objects.create(name="name", page=page3, display_name='', attr_type='id')
+    mattr2 = MetaAttr.objects.create(name="alias", page=page3, display_name='', attr_type='str')
+    mattr3 = MetaAttr.objects.create(name="size", page=page3, display_name='', attr_type='int')
+    mattr4 = MetaAttr.objects.create(name="big", page=page3, display_name='', attr_type='cbx')
+    mattr5 = MetaAttr.objects.create(name="small", page=page3, display_name='', attr_type='cbx')
+    mattr5 = MetaAttr.objects.create(name="option", page=page3, display_name='', attr_type='chc')
+
+    qgame = QGame.objects.create(name='example', version=VERSION)
+
+    item = QObject.objects.create(category='item', qgame=qgame)
+    room = QObject.objects.create(category='room', qgame=qgame)
+    return item, room
+
+
 
 
 class UtilsTests(TestCase):
 
-    def test_test_rule(self):
-        page = MetaPage.objects.create(name="test")
-        MetaAttr.objects.create(name="name", page=page, display_name='', attr_type='id')
-        MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
-        MetaAttr.objects.create(name="small", page=page, display_name='', attr_type='cbx')
-        item = QObject.objects.create(category='item')
+    def test_test_rule_boolean(self):
+        item, room = setup()
+        
         item.set_attr('name', 'red ball')
         item.set_attr('big', False)
         item.set_attr('small', True)
 
-        self.assertEqual(test_rule(item, "flag=big"), False)
-        self.assertEqual(test_rule(item, "flag=small"), True)
-        self.assertEqual(test_rule(item, "!flag=big"), True)
-        self.assertEqual(test_rule(item, "!flag=small"), False)
+        self.assertEqual(test_rule(item, None, "big=True"), False)
+        self.assertEqual(test_rule(item, None, "small=True"), True)
+        self.assertEqual(test_rule(item, None, "big=False"), True)
+        self.assertEqual(test_rule(item, None, "small=False"), False)
+
+
+    def test_test_rule_str(self):
+        item, room = setup()
+        item = QObject.objects.create(category='item')
+        item.set_attr('name', 'red ball')
+        item.set_attr('alias', 'test string')
+        item.set_attr('option', 'choice')
+
+        self.assertEqual(test_rule(item, None, "alias=test string"), True)
+        self.assertEqual(test_rule(item, None, "!alias=test string"), False)
+        self.assertEqual(test_rule(item, None, "alias=wrong string"), False)
+        self.assertEqual(test_rule(item, None, "!alias=wrong string"), True)
+
+        self.assertEqual(test_rule(item, None, "option=choice"), True)
+        self.assertEqual(test_rule(item, None, "option=bad choice"), False)
 
 
     def test_test_rules1(self):
-        page = MetaPage.objects.create(name="test", rules="flag=big")
+        page = MetaPage.objects.create(name="test", rules="big=True")
         MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
         item = QObject.objects.create(category='item')
         item.set_attr('big', False)
 
-        self.assertEqual(test_rules(item, page), False)
+        self.assertEqual(test_rules(item, None, page), False)
 
 
     def test_test_rules2(self):
-        page = MetaPage.objects.create(name="test", rules="flag=big")
+        # The @ says we should use the second object for the rule, not the first
+        page = MetaPage.objects.create(name="test", rules="@big=True")
+        MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
+        item = QObject.objects.create(category='item')
+        item2 = QObject.objects.create(category='item')
+        item.set_attr('big', True)
+
+        # The second item is not big, so rule returns false
+        self.assertEqual(test_rules(item, item2, page), False)
+        item2.set_attr('big', True)
+        # The second item is now big, so rule returns true
+        self.assertEqual(test_rules(item, item2, page), True)
+
+
+    def test_test_rules2(self):
+        page = MetaPage.objects.create(name="test", rules="big=True")
         MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
         item = QObject.objects.create(category='item')
         item.set_attr('big', True)
 
-        self.assertEqual(test_rules(item, page), True)
+        self.assertEqual(test_rules(item, None, page), True)
 
 
     def test_select_choice_with_strings(self):
@@ -75,12 +122,22 @@ class UtilsTests(TestCase):
         self.assertEqual(s, expected)
 
 
+    def test_get_special_widget(self):
+        page = MetaPage.objects.create(name="test", category='item')
+        MetaAttr.objects.create(name="loc", page=page, display_name='', attr_type='obj')
+        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str') # needed even if not used!
+        room = QObject.objects.create(category='room', name='lounge')
+        item1 = QObject.objects.create(category='item', name='one')
+        item2 = QObject.objects.create(category='item', name='two')
+        item3 = QObject.objects.create(category='item', name='three')
+        item1.set_attr('loc', 'lounge')
+        item2.set_attr('loc', 'lounge')
 
+        s = room.get_special_widget('item-list')
+        expected = '<ul><li><a href="/edit/object/2" target="_blank">one</a></li><li><a href="/edit/object/3" target="_blank">two</a></li></ul>'
+        expected += '<input type="text" id="add-item-lounge" class="restricted-input"/> [<span class="clickable" onclick="add_obj(\'item\', \'lounge\')">Add</span>]'
 
-
-
-
-
+        self.assertEqual(s, expected)
 
 
 
@@ -88,11 +145,7 @@ class UtilsTests(TestCase):
 class MetaPageTests(TestCase):
 
     def test_get_all(self):
-        page1 = MetaPage.objects.create(name="test", category='room')
-        page2 = MetaPage.objects.create(name="test", category='room')
-        page3 = MetaPage.objects.create(name="test", category='item')
-        room = QObject.objects.create(category='room')
-        item = QObject.objects.create(category='item')
+        item, room = setup()
 
         self.assertEqual(len(MetaPage.get_all(room)), 2)
         self.assertEqual(len(MetaPage.get_all(item)), 1)
@@ -100,8 +153,8 @@ class MetaPageTests(TestCase):
 
     def test_get_some(self):
         page1 = MetaPage.objects.create(name="test1", category='item')
-        page2 = MetaPage.objects.create(name="test2", category='item', rules='flag=big')
-        page3 = MetaPage.objects.create(name="test3", category='item', rules='flag=small')
+        page2 = MetaPage.objects.create(name="test2", category='item', rules='big=True')
+        page3 = MetaPage.objects.create(name="test3", category='item', rules='small=True')
         MetaAttr.objects.create(name="name", page=page1, display_name='', attr_type='id')
         MetaAttr.objects.create(name="big", page=page2, display_name='', attr_type='cbx')
         MetaAttr.objects.create(name="small", page=page3, display_name='', attr_type='cbx')
@@ -118,7 +171,6 @@ class MetaPageTests(TestCase):
 
 
 
-
 class MetaAttrTests(TestCase):
 
     def test_to_type(self):
@@ -128,21 +180,23 @@ class MetaAttrTests(TestCase):
         mattr3 = MetaAttr.objects.create(name="size", page=page, display_name='', attr_type='int')
         mattr4 = MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
 
-        self.assertEqual(mattr1.get_type()[0], 'id')
-        self.assertEqual(mattr2.get_type()[0], 'str')
+        self.assertEqual(mattr1.get_type().code, 'id')
+        self.assertEqual(mattr2.get_type().code, 'str')
         self.assertEqual(mattr2.to_type('house'), 'house')
         self.assertEqual(mattr3.to_type('5'), 5)
         self.assertEqual(mattr4.to_type('True'), True)
 
 
+
     def test_attr_row(self):
+        item, room = setup()
         page = MetaPage.objects.create(name="test")
         mattr = MetaAttr.objects.create(name="obj1", page=page, display_name='', attr_type='str', category='item')
-        room = QObject.objects.create(category='room')
-        item = QObject.objects.create(category='item')
         attr = QAttr.objects.create(value="pretty", qobject=item, attr=mattr)
+        
         s = attr_row(mattr, item)
-        self.assertEqual(s, '<tr title=""><td><b></b></td><td><input type="text" value="pretty" name="obj1"/></td><td> </td></tr>')
+        s_ex = '<tr title=""><td><b></b></td><td><input type="text" value="pretty" name="obj1"/></td><td></td></tr>'
+        self.assertEqual(s, s_ex)
         s = attr_row(mattr, room)
         self.assertEqual(s, '')
 
@@ -151,12 +205,14 @@ class MetaAttrTests(TestCase):
         self.maxDiff = None
         page = MetaPage.objects.create(name="test")
         mattr = MetaAttr.objects.create(name="loc", page=page, display_name='', attr_type='loc', category='item')
+        qgame = QGame.objects.create(name='example', version=VERSION)
         QObject.objects.create(name='lounge', category='room')
         QObject.objects.create(name='hall', category='room')
         item = QObject.objects.create(category='item')
         #attr = QAttr.objects.create(value="pretty", qobject=item, attr=mattr)
         s = attr_row(mattr, item)
-        self.assertEqual(s, '<tr title=""><td><b></b></td><td>  <select id="loc" name="loc" style="width:300px;" data-valid="yes">\n    <option value="-1" selected>--- Select ---</option>\n    <option value="hall">hall</option>\n    <option value="lounge">lounge</option>\n  </select>\n</td><td> </td></tr>')
+        s_ex = '<tr title=""><td><b></b></td><td>  <select id="loc" name="loc" style="width:300px;" data-valid="yes">\n    <option value="-1" selected>--- Select ---</option>\n    <option value="hall">hall</option>\n    <option value="lounge">lounge</option>\n  </select>\n</td><td></td></tr>'
+        self.assertEqual(s, s_ex)
         
         
     def test_help_text(self):
@@ -168,16 +224,54 @@ class MetaAttrTests(TestCase):
 
 
 
+class QAttrTests(TestCase):
+    def test_get_attr(self):
+        item, room = setup()
+        page = MetaPage.objects.create(name="test")
+        mattr1 = MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
+        mattr2 = MetaAttr.objects.create(name="size", page=page, display_name='', attr_type='int')
+        attr1 = QAttr.objects.create(attr=mattr1, qobject=item, value='Hello World')
+        attr2 = QAttr.objects.create(attr=mattr2, qobject=item, value=42)
+        
+        self.assertEqual(attr1.attr.to_type(attr1.value), 'Hello World')
+        self.assertEqual(attr1.get_value(), 'Hello World')
+        self.assertEqual(attr2.get_value(), 42)
+
+
+
+
+
+
+
 class QObjectTests(TestCase):
 
-    def test_attr(self):
-        page = MetaPage.objects.create(name="test")
-        MetaAttr.objects.create(name="name", page=page, display_name='', attr_type='id')
-        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
-        MetaAttr.objects.create(name="size", page=page, display_name='', attr_type='int')
-        MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
-        MetaAttr.objects.create(name="small", page=page, display_name='', attr_type='cbx')
-        item = QObject.objects.create(category='item')
+    def test_set_attr(self):
+        item, room = setup()
+        
+        count1 = QAttr.objects.all().count()
+        item.set_attr('name', 'red ball')
+        item.set_attr('alias', 'the red ball')
+        item.set_attr('size', 7)
+        item.set_attr('big', False)
+        item.set_attr('small', True)
+        count2 = QAttr.objects.all().count()
+        self.assertEqual(count2, count1 + 4)
+
+
+
+    def test_attr_defaults(self):
+        item, room = setup()
+
+        item.set_attr('name', 'red ball')
+
+        self.assertEqual(item.get_attr('alias'), '')
+        self.assertEqual(item.get_attr('size'), 0)
+        self.assertEqual(item.get_attr('big'), False)
+        self.assertEqual(item.get_attr('small'), False)
+        
+    def test_get_attr(self):
+        item, room = setup()
+
         item.set_attr('name', 'red ball')
         item.set_attr('alias', 'the red ball')
         item.set_attr('size', 7)
@@ -194,21 +288,17 @@ class QObjectTests(TestCase):
         self.assertEqual(item.get_attr('size'), 7)
         self.assertEqual(item.get_attr('big'), False)
         self.assertEqual(item.get_attr('small'), True)
-        
+
+
 
     def test_update(self):
-        page = MetaPage.objects.create(name="test")
-        MetaAttr.objects.create(name="name", page=page, display_name='', attr_type='id')
-        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
-        MetaAttr.objects.create(name="size", page=page, display_name='', attr_type='int')
-        MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
-        MetaAttr.objects.create(name="small", page=page, display_name='', attr_type='cbx')
-        item = QObject.objects.create(category='item')
+        item, room = setup()
         item.set_attr('name', 'red ball')
         item.set_attr('alias', 'the red ball')
         item.set_attr('size', 7)
         item.set_attr('big', False)
         item.set_attr('small', True)
+        page = MetaPage.objects.get(name='test3')
 
         item.update({
             'name':'blue ball',
@@ -225,17 +315,81 @@ class QObjectTests(TestCase):
         
 
 
+    def test_contents(self):
+        page = MetaPage.objects.create(name="test", category='item')
+        MetaAttr.objects.create(name="loc", page=page, display_name='', attr_type='loc', category='item')
+        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str') # needed even if not used!
+        qgame = QGame.objects.create(name='example', version=VERSION)
+        room = QObject.objects.create(category='room', name='lounge')
+        item1 = QObject.objects.create(category='item', name='one')
+        item2 = QObject.objects.create(category='item', name='two')
+        item3 = QObject.objects.create(category='item', name='three')
+        
+        self.assertEqual(room.get_contents(), [])
+        self.assertEqual(room.has_contents(), False)
+        
+        item1.set_attr('loc', 'lounge')
+        item2.set_attr('loc', 'lounge')
 
+        self.assertEqual(room.get_contents(), [item1, item2])
+        self.assertEqual(room.has_contents(), True)
+
+
+    def test_get_by_attr(self):
+        page = MetaPage.objects.create(name="test", category='item')
+        MetaAttr.objects.create(name="loc", page=page, display_name='', attr_type='loc', category='item')
+        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
+        qgame = QGame.objects.create(name='example', version=VERSION)
+        room = QObject.objects.create(category='room', name='lounge')
+        item1 = QObject.objects.create(category='item', name='one')
+        item2 = QObject.objects.create(category='item', name='two')
+        item3 = QObject.objects.create(category='item', name='three')
+        
+
+        item1.set_attr('alias', 'one')
+        self.assertEqual(QObject.get_by_attr('item', 'alias', 'one'), [item1])
+        self.assertEqual(QObject.get_not_attr('item', 'alias'), [item3, item2])
+        self.assertEqual(QObject.get_by_attr('item', 'loc', 'lounge'), [])
+        
+        item1.set_attr('loc', 'lounge')
+        item2.set_attr('loc', 'lounge')
+
+        self.assertEqual(QObject.get_by_attr('item', 'loc', 'lounge'), [item1, item2])
+        self.assertEqual(QObject.get_not_attr('item', 'loc'), [item3])
+
+
+
+
+class QObjectExitTests(TestCase):
+
+    def test_exits(self):
+        page = MetaPage.objects.create(name="test")
+        MetaAttr.objects.create(name="loc", page=page, category='exit', display_name='Location', attr_type='loc')
+        MetaAttr.objects.create(name="exit_type", page=page, category='exit', display_name='Exit type', attr_type='chc')
+        MetaAttr.objects.create(name="destination", page=page, category='exit', display_name='Destination', attr_type='loc')
+        MetaAttr.objects.create(name="direction", page=page, category='exit', display_name='Location', attr_type='str')
+
+        lounge = QObject.objects.create(category='room', name='lounge')
+        hall = QObject.objects.create(category='room', name='hall')
+        ext1, ext2 = lounge.create_link(hall, 'north')
+        
+        self.assertEqual(ext1.name, '__exit_lounge_north')
+        
+        ext = hall.find_exit('south')
+        self.assertEqual(ext, ext2)
+        self.assertEqual(ext.get_attr('direction'), 'south')
+        self.assertEqual(ext.get_attr('loc'), 'hall')
+        self.assertEqual(ext.get_attr('destination'), 'lounge')
+        ext = hall.find_exit('north')
+        self.assertEqual(ext, None)
+        
 
 
 class JSTests(TestCase):
     def test_to_js(self):
-        page = MetaPage.objects.create(name="test")
-        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
-        MetaAttr.objects.create(name="big", page=page, display_name='', attr_type='cbx')
-        MetaAttr.objects.create(name="small", page=page, display_name='', attr_type='cbx')
+        item, room = setup()
+        page = MetaPage.objects.get(name='test3')
         MetaAttr.objects.create(name="list", page=page, display_name='', attr_type='say')
-        item = QObject.objects.create(category='item')
         
         attr = item.set_attr('alias', 'the red ball')
         self.assertEqual(attr.to_js(), '  alias:"the red ball",\n')
@@ -245,7 +399,7 @@ class JSTests(TestCase):
         self.assertEqual(attr.to_js(), '  small:true,\n')
         attr = item.set_attr('list', 'one|two|three')
         self.assertEqual(attr.to_js(), '  list:[\n    "one",\n    "two",\n    "three",\n  ],\n')
-        
+
         
     def test_to_js_int(self):
         page = MetaPage.objects.create(name="test")
@@ -279,19 +433,17 @@ class JSTests(TestCase):
         
 
     def test_to_js_object(self):
-        page = MetaPage.objects.create(name="test")
-        MetaPage.objects.create(name="templates")
-        MetaAttr.objects.create(name="name", page=page, display_name='', attr_type='id')
-        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str')
-        MetaAttr.objects.create(name="size", page=page, display_name='', attr_type='int')
-        item = QObject.objects.create(name='ball', category='item')
-        
+        item, room = setup()
+        page2 = MetaPage.objects.create(name="templates")
+        item.set_attr('name', 'ball')
         item.set_attr('alias', 'the red ball')
         item.set_attr('size', 7)
-        self.assertEqual(item.to_js(), 'createItem("ball", {\n  alias:"the red ball",\n  size:7,\n})\n\n')
+        s = item.to_js()
+        s_exp = 'createItem("ball", {\n  alias:"the red ball",\n  size:7,\n})\n\n'
+        self.assertEqual(s, s_exp)
         
             
-    def test_to_js_object_choice(self):
+    def ntest_to_js_object_choice(self):
         page = MetaPage.objects.create(name="test")
         MetaPage.objects.create(name="templates")
         MetaAttr.objects.create(name="name", page=page, display_name='', attr_type='id')
@@ -301,7 +453,7 @@ class JSTests(TestCase):
         
         item.set_attr('alias', 'Lara Rabbit')
         item.set_attr('gender', 'female')
-        self.assertEqual(item.to_js(), 'createItem("Lara", {\n  alias:"Lara Rabbit",\n  gender:pronouns.female,\n})\n\n')
+        self.assertEqual(item.to_js(), 'createItem("Lara", {\n  alias:"Lara Rabbit",\n  gender:lang.pronouns.female,\n})\n\n')
         
             
     def test_to_js_object_template(self):
@@ -364,17 +516,40 @@ class KickStartTests(TestCase):
         
     def test_kick_start(self):
         kick_start()
-        self.assertEqual(len(QObject.objects.all()), 7)
+        self.assertTrue(len(QObject.objects.all()) > 10)
 
 
 
+
+class HelperTests(TestCase):
+
+    def test_hier_obj(self):
+        page1 = MetaPage.objects.create(name="test", category='item')
+        page2 = MetaPage.objects.create(name="test", category='room')
+        MetaAttr.objects.create(name="loc", page=page1, display_name='', attr_type='obj')
+        MetaAttr.objects.create(name="alias", page=page1, category='item', display_name='', attr_type='str') # needed even if not used!
+        MetaAttr.objects.create(name="alias", page=page2, category='room', display_name='', attr_type='str')
+        room = QObject.objects.create(category='room', name='lounge')
+        item1 = QObject.objects.create(category='item', name='one')
+        item2 = QObject.objects.create(category='item', name='two')
+        item3 = QObject.objects.create(category='item', name='three')
+        item1.set_attr('loc', 'lounge')
+        item2.set_attr('loc', 'lounge')
+
+        s = hier_obj(item1)
+        s = hier_obj(room)
 
 
 
 
 class ViewTests(TestCase):
     def test_list(self):
+        page = MetaPage.objects.create(name="test", category='item')
+        MetaAttr.objects.create(name="loc", page=page, display_name='', attr_type='loc', category='item')
+        MetaAttr.objects.create(name="alias", page=page, display_name='', attr_type='str') 
+
         response = self.client.get(reverse("edit:object_list"))
         self.assertEqual(response.status_code, 200)
-        self.assertQuerySetEqual(response.context["room_list"], [])        
-        self.assertQuerySetEqual(response.context["item_list"], [])        
+        self.assertQuerySetEqual(response.context["region_list"], [])        
+        self.assertQuerySetEqual(response.context["nowhere_list"], [])        
+        

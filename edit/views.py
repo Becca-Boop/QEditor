@@ -23,10 +23,14 @@ def play(request):
     return render(request, "edit/play.html", context)
 
 def object_list(request):
-    room_list = QObject.objects.filter(category='room').order_by('name')
-    item_list = QObject.objects.filter(category='item').order_by('name')
-    context = {"room_list": room_list, "item_list": item_list}
-    return render(request, "edit/object_list.html", context)
+    #room_list = QObject.objects.filter(category='room').order_by('name')
+    nowhere_list = QObject.get_not_attr(category='item', attr_name='loc')
+    region_list = QObject.objects.filter(category='regn').order_by('name')
+    qgame = QGame.objects.first()
+    print(qgame)
+    context = {"nowhere_list": nowhere_list, 'region_list':region_list, 'qgame':qgame}
+    return render(request, "edit/region_list.html", context)
+    #return render(request, "edit/object_list.html", context)
     
  
 def object_edited(request, object_id):
@@ -47,16 +51,70 @@ def object_edited(request, object_id):
         return redirect('/edit/object/' + str(qobject.id) + '/page/' + str(page.id))
 
     
+def item_added(request, object_id):
+    qobject = get_object_or_404(QObject, pk=object_id)
+    name = request.POST['__name__']
+    print('item_added')
+    print(qobject.name)
+    print(name)
+
+    new_object = QObject.objects.create(category='item', name=name, qgame=qobject.qgame)
+    new_object.set_attr('loc', qobject.name)
+    new_object.set_attr('gender', 'thirdperson')
+    return redirect('/edit/object/' + str(new_object.id))
+
+    
+def item_added_nowhere(request):
+    # actually adding an item, but putting it nowhere
+    # TODO!!! needs a qgame!!!
+    name = request.POST['__name__']
+
+    new_object = QObject.objects.create(category='item', name=name)
+    new_object.set_attr('gender', 'thirdperson')
+    return redirect('/edit/object/' + str(new_object.id))
+
+    
+def exit_added(request, object_id):
+    print('=============================================')
+    qobject = get_object_or_404(QObject, pk=object_id)
+    print(qobject.name)
+    name = request.POST['__name__']
+    print(name)
+    direction = request.POST['__dir__']
+    print(direction)
+    dest = QObject.objects.get(name=name)
+
+    new_object = qobject.create_exit(dest, direction)
+    print('About to redirect')
+    return redirect('/edit/object/' + str(new_object.id))
+
+    
+def room_added(request):
+    name = request.POST['__name__']
+    region_name = request.POST['__region__']
+    region = QObject.objects.get(name=region_name)
+
+    new_object = QObject.objects.create(category='room', name=name, qgame=region.qgame)
+    new_object.set_attr('region', region.name)
+    return redirect('/edit/object/' + str(new_object.id))
+
+def region_added(request):
+    # !!! TODO
+    name = request.POST['__name__']
+
+    new_object = QObject.objects.create(category='regn', name=name)
+    return redirect('/edit/object/' + str(new_object.id))
+
+    
 def object_page(request, object_id, page_id=-1):
     qobject = get_object_or_404(QObject, pk=object_id)
     if page_id == -1:
         page = MetaPage.get_home(qobject)
     else:
         page = MetaPage.objects.get(pk=page_id)
-    print(page.name)
     mattrs = MetaAttr.objects.filter(page=page)
     qattrs = QAttr.objects.filter(qobject=qobject, attr__page=page)
-    return render(request, "edit/object_detail.html", {"qobject": qobject, "mattrs":mattrs, "qattrs":qattrs, "page":page, "pages":MetaPage.get_some(qobject) })
+    return render(request, "edit/object_detail.html", {"qobject": qobject, "mattrs":mattrs, "qattrs":qattrs, "page":page, "pages":MetaPage.get_some(qobject), 'title':'QJS: ' + qobject.name })
 
 
 def settings(request):

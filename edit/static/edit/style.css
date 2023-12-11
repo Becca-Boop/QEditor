@@ -10,7 +10,7 @@
 
 body {
   background-color: #e0e0e0;
-  background-image: linear-gradient(to bottom right, red, yellow, blue);
+  /*background-image: linear-gradient(to bottom right, red, yellow, blue);*/
   color: #333;
   margin: 0px;
   padding: 30px;
@@ -37,15 +37,25 @@ div#title {
   font-style: italic;
   padding: 5px;
   border: 1px solid black;
-  border-radius: 3px;
+  /*border-radius: 3px;*/
+  transform: skew(-23deg);
   background-color: #fff;
   z-index:2;
 }
 
+span.clickable {
+   cursor:pointer;
+   color:blue;
+   text-decoration:underline;
+}
+
+span.clickable:hover {
+  background-color: black;
+  color: white;
+}
 
 
-/**************************************/
-/*               DIV                  */
+
 
 /* All content goes in here */
 div.main {
@@ -60,6 +70,55 @@ div.main {
 }
 
 
+div.warning {
+  font-weight: bold;
+  color: #800;
+  padding: 3px;
+  margin: 5px;
+  border: #800 2px solid;
+}
+
+
+
+form > input[type=button] {
+  background-color: #04AA6D;
+  background-image: linear-gradient(
+    to right,
+    #31a,
+    #31a 50%,
+    #106 50%
+  );
+  border: none;
+  color: white;
+  padding: 10px 16px;
+  text-decoration: none;
+  margin: 4px 2px;
+  cursor: pointer;
+  transform: skew(-23deg);
+  background-size: 200% 100%;
+  background-position: -100%;
+  /*-webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;*/
+  transition: all 0.3s ease-in-out;
+}
+
+
+input[type=button]:hover {
+ background-position: 0;
+}
+input[type=button]:hover::before {
+  width: 100%;
+}
+
+
+input[type=button]:disabled {
+  cursor: auto;
+  background-color: white;
+  background-image: none;
+  color: #31a;
+  border-top: #31a solid 3px;
+}
+
 
 
 /**************************************/
@@ -67,8 +126,8 @@ div.main {
 
 table, td, th {
     border-color: #600000;
-    border-style: none;
-    /*border-style: solid;*/
+    /*border-style: none;*/
+    border: solid 1px;
 }
 
 table {
@@ -87,7 +146,6 @@ td, th {
 }
 
 tr {
-    /*background-color: #FFC;*/
     background-color: #E0E0E0;
 }
 

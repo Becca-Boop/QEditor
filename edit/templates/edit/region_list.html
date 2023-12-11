@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% load static %}
+{% load helpers %}
+
+{% block content %}
+
+
+<table width="80%">
+  <tr>
+    <td>
+      Add new region: 
+      <input type="text" id="add-region-region" class="restricted-input"/>
+      [<span class="clickable" onclick="add_obj('region', 'region')">Add</span>]
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Items: [<span class="clickable" onclick="showAll()">Show all</span>] [<span class="clickable" onclick="hideAll()">Hide all</span>]
+    </td>
+  </tr>
+
+
+  {% for region in region_list %}
+    <tr><td>
+      {% hier_triangle region.name %}
+      <a href="{% url 'edit:object_detail' region.id %}" target="_blank">{{ region.name }}</a>
+
+      <div id="list-for-{{ region.name }}" style="display:none;" class="show-hide">
+        <ul style="list-style-type: none;">
+        {% for room in region.room_list %}
+          {% hier_obj room %}
+        {% endfor %}
+        </ul>
+        Add new location to {{ region.name }}: <input type="text" id="add-room-{{ region.name }}" class="restricted-input"/> [<span class="clickable" onclick="add_obj('room', '{{ region.name }}')">Add</span>]
+      </div>  
+    </td></tr>
+    {% if region.expanded %}
+      <script>
+      showList('{{region.name}}')
+      </script>
+    {% endif %}
+  {% endfor %}
+  
+    <tr><td>
+      {% hier_triangle '__nowhere__' %}
+      Nowhere...
+
+      <div id="list-for-__nowhere__" style="display:none;" class="show-hide">
+        <ul style="list-style-type: none;">
+        {% for obj in nowhere_list %}
+          {% hier_obj obj %}
+        {% endfor %}
+        </ul>
+        Add new item to nowhere: <input type="text" id="add-nowhere-nowhere" class="restricted-input"/> [<span class="clickable" onclick="add_obj('nowhere', 'nowhere')">Add</span>]
+      </div>  
+    </td></tr>  
+  
+  
+  
+  
+  
+  
+</table>
+
+
+
+
+
+
+
+  <form action="{% url 'edit:region_added' %}" method="post" target="_blank" id="add-region-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-region-name" name="__name__"/>
+  </form>
+
+  <form action="{% url 'edit:room_added' %}" method="post" target="_blank" id="add-room-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-room-region" name="__region__"/>
+  <input type="hidden" id="add-room-name" name="__name__"/>
+  </form>
+
+
+  <form action="{% url 'edit:item_added_nowhere' %}" method="post" target="_blank" id="add-nowhere-form">
+  {% csrf_token %}
+  <input type="hidden" id="add-nowhere-name" name="__name__"/>
+  </form>
+  
+{% warnings %}
+
+
+<p>Editor version: {{ qgame.name }}/{{ qgame.version }}</p>
+<p>Click <a href="/edit/help/home" target="_blank">here</a> for help</p>
+<p>Click <a href="{% url 'edit:settings' %}" target="_blank">here</a> to edit game settings</p>
+<p>Click <a href="{% url 'edit:play' %}" target="_blank">here</a> to play the game</p>
+<p>Click <a href="{% url 'edit:object_list' %}">here</a> to update this page</p>
+<p>Click <a href="{% url 'edit:reset' %}">here</a> to reset the database (all changes will be lost)</p>
+<p>Click <a href="/admin" target="_blank">here</a> to go to the admin page</p>
+
+<div id="overview-hide" onclick="showOverview()" class="clickable" style="display:none"><p>Click here for a quick overview</p></div>
+<div id="overview-show" onclick="hideOverview()" class="clickable">
+  <h4>A quick overview (click to hide)</h4>
+  <p>
+  This is the list view for your game. It is arranged as a hierarchy, with regions at the top. Each region can have a number of locations. Each location can have a number of items, and each item can itself contain further items. Click the arrow to the left of an object to show or hide the objects it contains. If there is a circle instead of an arrow, it does not contain anything.
+  </p>
+  <p>
+  To help keep you organised, all locations are assigned to regions. If that is not somethng you are interested in, just keep everything in one region. By default, regions have no effect on your game, but each location will have a region attribute, so you could use that in your game if desired. To move a location into a different region, go to the location's home tab.
+  </p>
+  <p>
+  Usually items are assigned to locations, but you can alo assign an item to another item - say if it is inside a container or held by an NPC. Items can also be nowhere; this is useful if you want to introduce them to a location during play.
+  </p>
+  <p>
+  All exits are assigned to locations of course.
+  </p>
+  <p>
+  This page does not update automatically. When you add objets to your game, or move them around from one place to another, you will need to reload this page to see the changes.
+  </p>
+</div>
+
+
+
+
+
+{% endblock %}
