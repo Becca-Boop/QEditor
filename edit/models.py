@@ -4,12 +4,14 @@ from .quest_data import *
 from .utils import *
 
 
-VERSION = 1
+VERSION = '0.1'
 
 
 
-
-
+# An object can be edited via a number of pages (or tabs?) within a web page.
+# A page has a category - pages for rooms will only get shown for a room
+# There should be one and only one "home" page for each category
+# Every MetaAttr belongs to a page
 class MetaPage(models.Model):
     name = models.CharField(max_length=12)
     alias = models.CharField(max_length=12)
@@ -35,7 +37,7 @@ class MetaPage(models.Model):
     @staticmethod
     def get_some(obj):
         lst = []
-        settings = QObject.get_settings()
+        settings = obj.qgame.get_settings()
         for el in MetaPage.objects.filter(category=obj.category):
             if test_rules(obj, settings, el):
                 lst.append(el)
@@ -56,18 +58,21 @@ class MetaPage(models.Model):
 
 
 
-# cannot be a database model, as it stores lambdas
+# Every MetaAttr has a ttpe - a MetaAttrType
+# This cannot be a database model, as it stores lambdas, so the various types are defined in MetaAttr.TYPE_CHOICES
+# The type handles how values are converted to and from string, and how they are displayed on the web page.
 class MetaAttrType():
-    def __init__(self, code, name, widget, default = '', big_widget = False, from_db = None, from_http = None, to_js = None, help_text = None):
+    def __init__(self, code, name, widget, default = '', big_widget = False, from_db = None, from_http = None, to_js = None, help_text = None, ignore_for_js = False):
         self.code = code
         self.name = name
         self.widget = widget
         self.default = default
         self.big_widget = big_widget
-        self.from_db = from_db if from_db else lambda x:x
-        self.from_http = from_http
-        self.to_js = to_js
+        self.from_db = from_db if from_db else lambda x, attr:x
+        self.from_http = from_http if from_http else lambda x, attr:x if x else ''
+        self.to_js = to_js if to_js else '"*value*"'
         self.help_text = help_text
+        self.ignore_for_js = ignore_for_js
 
     def __str__(self):
         return 'MetaAttrType[' + self.name + ']'
@@ -75,6 +80,27 @@ class MetaAttrType():
 
 
 
+class MetaObjectAttrType(MetaAttrType):
+    def __init__(self, code, name, category):
+        super().__init__(code, name,
+          lambda mattr, value, obj: select_choice(mattr.name, obj.qgame.list_names(self.category), value),
+          from_db = lambda x, attr: attr.qobject.qgame.find_by_name(x),
+          from_http = lambda x, attr: attr.qobject.qgame.find_by_name(x),
+        )
+        self.category = category
+
+    def __str__(self):
+        return 'MetaObjectAttrType[' + self.name + ']'
+
+
+
+
+
+# MetaAttr objects define the attributes available
+# An item has an "alias" attribute. The details of what an alias attribute is
+# (as opposed to the actual value) is in the MtaAttr.
+# A MetaAttr belongs to a MetaPage, determining which tab it is shown on.
+# It has a category, which should match that of the MetaPage
 class MetaAttr(models.Model):
     #   lambda for conversion of data from string in HTTP POST or None if not saved to database
     #   template or lambda for writing to JavaScript file
@@ -83,149 +109,114 @@ class MetaAttr(models.Model):
     # Save data as a human-friendly string. This means that for a list we save the entry in the list or the name of the object, not the index
     TYPE_CHOICES =(
 
+        # String attribute types - all pretty straightforward
         # Must be present, and only present once; stored as an attribute rather than in a QAttr record
         MetaAttrType("id",  "id string", '<input type="text" value="*value*" name="*name*" class="restricted-input"/>',
-            from_http=lambda x: x,
-            to_js='"*value*"',
             help_text='Can only contain standard letters and numbers, plus underscore.',
         ),  
-        
         MetaAttrType("str", "short string", '<input type="text" value="*value*" name="*name*"/>',
-            from_http=lambda x: '' if not x else x,
-            to_js='"*value*"',
         ),
-        
         MetaAttrType("nst", "short string, not editable", lambda mattr, value, obj: value,
-            from_http=lambda x: '' if not x else x,
-            to_js='"*value*"',
         ),
-        
         MetaAttrType("txt", "text", '<textarea rows="7" cols="120" name="*name*">*value*</textarea>',
             big_widget=True,
-            from_http=lambda x: '' if not x else x,
-            to_js='"*value*"',
+        ),
+        MetaAttrType("imp", "implemetation notes", '<textarea rows="7" cols="120" name="*name*">*value*</textarea>',
+            big_widget=True,
+            ignore_for_js=True,
+            help_text='Use to note what you still have to do or what you did it this way. This will not be part of your published game.',
+        ),
+
+        
+        # Number attribute types - fairly straightforward, just need convertingh to from string for database
+        MetaAttrType("int", "integer", lambda mattr, value, obj: f'<input type="number" value="{value}" name="{mattr.name}"/>' if value else f'<input type="number" name="{mattr.name}"/>',
+            from_db=lambda x, attr: int(x) if x else 0,
+            from_http=lambda x, attr: int(x) if x else 0,
+            to_js='*value*',
+            default=0,
+        ),
+        MetaAttrType("flt", "float", lambda mattr, value, obj: f'<input type="number" value="{value}" name="{mattr.name}"/>' if value else f'<input type="number" name="{mattr.name}"/>',
+            from_db=lambda x, attr: float(x) if x else 0.0,
+            from_http=lambda x, attr: float(x) if x else None,
+            to_js='*value*',
         ),
         
-        MetaAttrType("scr", "script", '<textarea rows="6" cols="40" name="*name*" style="background-color:#888;font-family:monospace">*value*</textarea>',        
-            big_widget=True,
-            from_http=lambda x: '' if not x else x,
-            to_js='function() {*value*}',  # !!! May want to add params, etc
+        
+        # Object attribute types - all pretty straightforward, just save object name as string
+        # Note for JS save the name as a string (object may not exist yet)
+        MetaObjectAttrType("obj", "location", 'all'),
+        MetaObjectAttrType("rgn", "location", 'regn'),
+        MetaObjectAttrType("itm", "location", 'item'),
+        MetaObjectAttrType("loc", "location", 'room'),
+
+
+
+        # Selection attribute types - save selection as string, not index
+        # The only difference to a string is the widget
+        # A choice is one of a set of options, so requires extra parameter when setting up, either list or dictionary
+        MetaAttrType("chc", "choice", lambda mattr, value, obj: select_choice(mattr.name, mattr.options(), value),
+        ),
+        # Pre-defined options
+        MetaAttrType("gdr", "gender", lambda mattr, value, obj: select_choice(mattr.name, GENDER_OPTIONS, value),
+            to_js='lang.pronouns.*value*',
+        ),
+        MetaAttrType("dir", "direction", lambda mattr, value, obj: select_choice(mattr.name, DIRECTIONS, value),
         ),
 
+
+        # Boolean attribute types - save as True or False in database
+        # HTTP handles this by whether the attribute is present or not, which is an issue
+        MetaAttrType("cbx", "boolean flag", lambda mattr, value, obj: f'<input type="checkbox" name="{mattr.name}" checked/>' if value else  f'<input type="checkbox" name="{mattr.name}"/>',
+            from_db=lambda x, attr: x == 'True',
+            from_http=lambda x, attr: x == 'True',
+            to_js=lambda x: 'true' if x else 'false',
+            default=False,
+        ),
+        # A button sets (or unsets?) an attribute, and then saves; use for templates as they change the buttons on the top
+        MetaAttrType("btn", "button", lambda mattr, value, obj: f'Set<input type="hidden" name={mattr.name} value="yes" />' if value else '<input type="button" value="Add" onclick="template_button(\'' + mattr.name + '\')"/>',
+            from_http=lambda x, attr: x == 'True',
+            to_js=lambda x: 'true' if x else 'false',
+        ),  
+
+
+        # Script
+        # Some work to do here!!! Need the to_js to handle parameters and maybe return
+        MetaAttrType("scr", "script", '<textarea rows="6" cols="40" name="*name*" style="background-color:#888;font-family:monospace">*value*</textarea>',        
+            big_widget=True,
+            to_js='function() {*value*}',  # !!! May want to add params, etc
+        ),
+        
+
+        # String array
         MetaAttrType("say", "string array", '<textarea rows="7" cols="120" name="*name*">*value*</textarea>',
             big_widget=True,
-            from_http=lambda x: '' if not x else x,
-            to_js=lambda x: string_array_to_js(x),
-            help_text='Enter each entry as part of a single string, using a vertical bar to separate.',
-        ),  # !!!
+            to_js=lambda x: string_array_to_js(x, '\n'),
+            help_text='Enter each entry on its own line.',
+        ),
 
+
+        # Regular expression
         MetaAttrType("rgx", "regex", '<input type="text" value="*value*" name="*name*"/>',
-            from_http=lambda x: '' if not x else x,
             to_js='/*value*/',
             help_text='This is a regular expression.',
         ),
 
-        MetaAttrType("int", "integer", lambda mattr, value, obj: f'<input type="number" value="{value}" name="{mattr.name}"/>' if value else f'<input type="number" name="{mattr.name}"/>',
-            from_db=lambda x: int(x) if x else 0,
-            from_http=lambda x: int(x) if x else 0,
-            to_js='*value*',
-            default=0,
-        ),
-        
-        MetaAttrType("flt", "float", lambda mattr, value, obj: f'<input type="number" value="{value}" name="{mattr.name}"/>' if value else f'<input type="number" name="{mattr.name}"/>',
-            from_db=lambda x: float(x) if x else 0.0,
-            from_http=lambda x: float(x) if x else None,
-            to_js='*value*',
-        ),
-        
-        MetaAttrType("obj", "object", lambda mattr, value, obj: select_choice(mattr.name, QObject.list_names('all'), value),
-            from_http=lambda x: QObject.find_by_name(x),
-            to_js='"*value*"',
-        ),
 
-        MetaAttrType("rgn", "region", lambda mattr, value, obj: select_choice(mattr.name, QObject.list_names('regn'), value),
-            from_http=lambda x: QObject.find_by_name(x),
-            to_js='"*value*"',
-        ),
-
-        MetaAttrType("itm", "item", lambda mattr, value, obj: select_choice(mattr.name, QObject.list_names('item'), value),
-            from_http=lambda x: QObject.find_by_name(x),
-            to_js='"*value*"',
-        ),
-
-        MetaAttrType("loc", "location", lambda mattr, value, obj: select_choice(mattr.name, QObject.list_names('room'), value),
-            from_http=lambda x: QObject.find_by_name(x),
-            to_js='"*value*"',
-        ),
-
-        MetaAttrType("nob", "object, not editable", lambda mattr, value, obj: value.name,
-            from_http=lambda x: QObject.find_by_name(x),
-            to_js='"*value*"',
-        ),
-        
-
-
-
-        MetaAttrType("chc", "choice", lambda mattr, value, obj: select_choice(mattr.name, mattr.options(), value),
-            from_http=lambda x: x,
-            to_js='"*value*"',
-        ),
-
-        MetaAttrType("gdr", "gender", lambda mattr, value, obj: select_choice(mattr.name, GENDER_OPTIONS, value),
-            from_http=lambda x: x,
-            to_js='lang.pronouns.*value*',
-        ),
-
-        MetaAttrType("dir", "direction", lambda mattr, value, obj: select_choice(mattr.name, DIRECTIONS, value),
-            from_http=lambda x: x,
-            to_js='"*value*"',
-        ),
-
-        MetaAttrType("cbx", "boolean flag", lambda mattr, value, obj: f'<input type="checkbox" name="{mattr.name}" checked/>' if value else  f'<input type="checkbox" name="{mattr.name}"/>',
-            from_db=lambda x: x == 'True',
-            from_http=lambda x: x == 'True',
-            to_js=lambda x: 'true' if x else 'false',
-            default=False,
-        ),
-        
-        # a button sets or unsets an attribute, and then saves; use for templates as they change the buttons on the top
-        MetaAttrType("btn", "button", lambda mattr, value, obj: f'Set<input type="hidden" name={mattr.name} value="yes" />' if value else '<input type="button" value="Add" onclick="template_button(\'' + mattr.name + '\')"/>',
-            from_http=lambda x: x == 'True',
-            to_js=lambda x: 'true' if x else 'false',
-        ),  
-
+        # Special; uses get_special_widget to get the HTML widget, but otherwise as per string
         MetaAttrType("spc", "special", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
             to_js=lambda x: '',
         ),
                 
-        MetaAttrType("imp", "implemetation notes", '<textarea rows="7" cols="120" name="*name*">*value*</textarea>',
-            big_widget=True,
-            from_http=lambda x: '' if not x else x,
-            help_text='Use to note what you still have to do or what you did it this way. This will not be part of your published game.',
-        ),
         
-        MetaAttrType("nul", "Not a proper attribute", '',
+        # Exits
+        MetaAttrType("ext", "exit", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
+            ignore_for_js=True,
         ),
             
                 
-        # exits are complicated as they contain lots of attributes themselves
-        # do we do them as objects?
-        # or as complex attributes?
-        # attributes:
-        #    loc
-        #    destination (or nowhere)
-        #    direction
-        #    exit_type (Exit, Link, NonExit, BarredExit, WayIn (item), WayOut, ClimbExit(item) u/d, StairsUp(item) card, StrairsDown(item) card
-        #    script (simpleUse)
-        #    msg
-        #    npcLeaveMsg
-        #    npcEnterMsg
-        #    msgNPC
-        #    hidden/locked/lit
-        #    lockedMsg
-        #    scenery
-        #    alsoDir
-        MetaAttrType("ext", "exit", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
+        # Null; no widget, but appears as comment
+        MetaAttrType("nul", "Not a proper attribute", '',
+            ignore_for_js=True,
         ),
     )
 
@@ -246,22 +237,25 @@ class MetaAttr(models.Model):
     def __str__(self):
         return 'MetaAttr("' + self.name + '")'
         
+        
+    # Gets the associated MetaAttrType
     def get_type(self):
         try:
             return next(x for x in MetaAttr.TYPE_CHOICES if x.code == self.attr_type)
         except StopIteration as exc:
             raise RuntimeError('Failed to find self.attr_type=' + self.attr_type) from exc
-
-
     
 
     # Convert the given value to the appropriate type. Eg if the attr_type is a cbx, it will
     # be converted to a Boolean. Uses lambdas in the array to do this.
-    def to_type(self, value):
+    def to_type(self, attr):
         # Unit tested
+        value = attr.value
         t = self.get_type()
-        return (t.from_db(value) if t.from_db else value)
-        
+        #print(value)
+        return t.from_db(value, attr)
+    
+    
     def get_help_text(self):
         # Unit tested
         s = self.help_text
@@ -269,11 +263,14 @@ class MetaAttr(models.Model):
             s += ' ' + self.get_type().help_text
         return s
         
+    # For a chc type MetaAttr, gets an array of options
+    # Not currently used
     def options(self):
-        return self.options_as_string.split('|')
+        return self.options_as_string.split('\n')
         
         
     # Find the MetaAttr with the given data
+    # Raised an error if it does not exist
     @staticmethod
     def get(name, category):
         try:
@@ -283,15 +280,96 @@ class MetaAttr(models.Model):
 
 
 
-
+# Currently multiple games are not supported, but they may well be n the future
+# To facilitate that, every object belongs to a game object.
+# Also handles version tracking
 class QGame(models.Model):
     name = models.CharField(max_length=50)
     version = models.IntegerField()
+    subversion = models.IntegerField()
 
     def __str__(self):
         return 'QGame("' + self.name + '")'
 
+    def get_version(self):
+        return str(self.version) + '.' + str(self.subversion)
 
+
+    # Returns a string; the objects in JS code (data.js)
+    def to_data_js(self):
+        code = '"use strict"\n\n'
+        for o in self.qobject_set.filter(qgame=self).all():
+            code += o.to_js()
+        return code
+
+    def get_settings(self):
+        return self.find_by_name('settings')
+    
+
+    # Returns a string; the settings in JS code (settings.js)
+    def to_settings_js(self):
+        code = '"use strict"\n\n'
+        o = self.get_settings()
+        return o.to_js()
+
+    def find_by_name(self, name):
+        # Unit tested
+        original_set = QObject.objects.filter(qgame=self, name=name)
+        if original_set.count() == 0:
+            return None
+        elif original_set.count() == 1:
+            return original_set.first()
+        else:
+            raise RuntimeError('Found multiple objects with name ' + name)
+
+    def list_names(self, option):
+        # Unit tested
+        if option == 'all':
+            return [q.name for q in QObject.objects.filter(qgame=self).order_by('name')]
+        else:
+            return [q.name for q in QObject.objects.filter(qgame=self, category=option).order_by('name')]
+ 
+    def list(self, option):
+        if option == 'all':
+            return QObject.objects.filter(qgame=self).order_by('name')
+        else:
+            return QObject.objects.filter(qgame=self, category=option).order_by('name')
+
+    # Return a list of items that have no location set
+    def get_by_attr(self, category, attr_name, value):
+        mattr = MetaAttr.objects.get(category=category, name=attr_name)
+        lst = []
+        for qattr in QAttr.objects.filter(qobject__qgame=self, attr=mattr, value=value):
+            lst.append(qattr.qobject)
+        return lst
+
+    # Return a list of items that do not have the given attribute
+    def get_not_attr(self, category, attr_name):
+        mattr = MetaAttr.objects.get(category=category, name=attr_name)
+        all_objs = QObject.objects.filter(qgame=self, category=category).order_by('name')
+        
+        exclude = []
+        for qattr in QAttr.objects.filter(attr=mattr):
+            exclude.append(qattr.qobject)
+        return [x for x in all_objs if x not in exclude]
+          
+    # Returns a list of duplicated names
+    def get_duplicates(self):
+        #print('here')
+        names = self.list_names('all')
+        seen = set()
+        seen_add = seen.add
+        # adds all elements it doesn't know yet to seen and all other to seen_twice
+        seen_twice = set( x for x in names if x in seen or seen_add(x) )
+        # turn the set into a list (as requested)
+        return list(seen_twice)
+
+
+
+
+
+# An object in the game; either an item or a location (room)
+# Also used to store exits and settings
 class QObject(models.Model):
     name = models.CharField(max_length=50)
     category = models.CharField(max_length=4, default='item')  # item, room or sttg
@@ -300,11 +378,13 @@ class QObject(models.Model):
     def __str__(self):
         return self.name
         
+    # Used on the HTML page for the item
     def title_name(self):
         if self.category == 'exit':
             return 'Exit ' + self.get_attr('direction') + ' from ' + self.get_attr('loc').name + ' to ' + self.get_attr('destination').name
         return self.name
         
+    # A full print out of the item with all attributes
     def print(self):
         s = self.name + ': '
         attrs = QAttr.objects.filter(qobject=self)
@@ -318,8 +398,10 @@ class QObject(models.Model):
         if alias:
             s += ' ("' + alias + '")'
         return s
-        
-        
+       
+       
+    # Create an exit from this location to the given destination and also the reverse
+    # Currently only used in one test
     def create_link(self, dest, dr):
         if self == dest:
             raise ValueError("Trying to create link from a location to itself")
@@ -327,15 +409,16 @@ class QObject(models.Model):
         ext1 = self.create_exit(dest, dr)
         return  ext1, ext2
 
-    def create_exit(self, dest, dr):
+    # Create an exit from this location to the given destination
+    def create_exit(self, dest, dr, exit_type = 'Simple'):
         ext = QObject.objects.create(name='__exit_' + self.name + '_' + dr, category='exit', qgame=self.qgame)
         ext.set_attr('loc', self)
         ext.set_attr('destination', dest)
         ext.set_attr('direction', dr)
-        ext.set_attr('exit_type', 'Exit')
+        ext.set_attr('exit_type', exit_type)
         return ext
       
-      
+    # Find an exit from this location in the given direction, or None if none
     def find_exit(self, dr):
         name = '__exit_' + self.name + '_' + dr
         exts = QObject.objects.filter(name=name, category='exit')
@@ -344,9 +427,6 @@ class QObject(models.Model):
         if exts.count() == 1:
             return exts[0]
         raise ValueError("To many exits found going " + dr + " from " + self.name)            
-    
-        
-        
         
     # Set an attribute for this object
     def set_attr(self, name, value):
@@ -375,7 +455,25 @@ class QObject(models.Model):
             else:
                 raise RuntimeError('Found multiple attributes for ' + self.name + ' and ' + attr.name)
 
+    # Get an attribute for this object as a string, or None
+    def get_attr_as_s(self, name):
+        # Unit tested
+        if name == 'name':
+            return self.name
+            
+        else:
+            attr = MetaAttr.get(name=name, category=self.category)
+            if not hasattr(attr.get_type(), "from_db"):
+                return None
 
+            original_set = QAttr.objects.filter(attr=attr, qobject=self)
+            if original_set.count() == 0:
+                return str(attr.get_type().default)
+            elif original_set.count() == 1:
+                return original_set.first().value
+            else:
+                raise RuntimeError('Found multiple attributes for ' + self.name + ' and ' + attr.name)
+                
     # Get an attribute for this object
     # It will be converted to the correct type,
     # despite being stored in the database as a string
@@ -393,18 +491,19 @@ class QObject(models.Model):
             if original_set.count() == 0:
                 return attr.get_type().default
             elif original_set.count() == 1:
-                #print(original_set.first().value)
-                #print(attr.to_type(original_set.first().value))
-                return attr.to_type(original_set.first().value)
+                return original_set.first().get_value()
             else:
                 raise RuntimeError('Found multiple attributes for ' + self.name + ' and ' + attr.name)
-                
                 
     # Returns a string; this object in JS code
     def to_js(self):
         # Unit tested
+        
+        if self.category not in ('sttg', 'room', 'item'):
+            return ''
+            
         if self.category == 'sttg':
-            s = ''
+            s = 'settings.version = "' + self.qgame.get_version() + '"\n'
         
         else:
             s = 'createRoom("' if self.category == 'room' else 'createItem("'
@@ -413,16 +512,44 @@ class QObject(models.Model):
                 s += template + '(), '
             s += '{\n'
 
+        # attributes
         attrs = QAttr.objects.filter(qobject=self)
         for attr in attrs:
             s += attr.to_js()
-                
-                
+
+        # exits
+        if self.category == 'room':
+            exits = self.get_contents(category='exit')
+            for e in exits:
+                s += e.exit_to_js()
+
         if self.category != 'sttg':
             s += '})\n\n'
         return s
         
-    # Get a string list of templates for te item.
+    # Returns a string; this exit in JS code as an attribute of a location
+    def exit_to_js(self):
+        
+        if self.category != 'exit':
+            return ''
+            
+        s = '  ' + self.get_attr('direction') + ':new '
+        if self.get_attr('exit_type') == 'Simple':
+            # north:new Exit("lounge"),
+            s += 'Exit("' + self.get_attr_as_s('destination') + '"),\n'
+        else:
+            # north:new Exit("lounge", {\n}),
+            s += self.get_attr('exit_type') + '("' + self.get_attr_as_s('destination') + '", {\n'
+
+            attrs = QAttr.objects.filter(qobject=self)
+            for attr in attrs:
+                if attr.attr.name not in ('loc', 'direction', 'destination', 'exit_type'):
+                    s += attr.to_js('    ')
+                
+            s += '  }),\n'
+        return s
+        
+    # Get a string list of templates for the item.
     def list_templates(self):
         if self.category != 'item':
             return []
@@ -433,24 +560,25 @@ class QObject(models.Model):
             if self.get_attr(attr.name):
                 lst.append(attr.name.upper())
         return lst
-        
 
-    # Get an object list of items that have this as the location
+    # Get a list of attributes of the given type for this object
+    # Used by get_contents.
     def _get_contents_attrs(self, attr_name, category):
-        loc_attr = MetaAttr.objects.get(name=attr_name, category=category)
+        loc_attr = MetaAttr.get(attr_name, category)
         return QAttr.objects.filter(attr=loc_attr, value=self.name)
 
-
+    # Get an object list of items that have this as the location
     def get_contents(self, attr_name='loc', category='item'):
-        #qattrs = get_contents_attrs()
         lst = []
         for qattr in self._get_contents_attrs(attr_name, category):
             lst.append(qattr.qobject)
         return lst
 
+    # Returns True if the object contains at least one item
     def has_contents(self, attr_name='loc'):
         return len(self.get_contents(attr_name)) > 0
 
+    # get_contents for a region
     def room_list(self):
         return self.get_contents('region', 'room')
 
@@ -471,10 +599,6 @@ class QObject(models.Model):
                 elif attr.name in data:
                     value = data[attr.name]
                     self.set_attr(attr.name, value)
-
-
-
-
 
     def get_special_widget(self, name):
         if name == 'item-list':
@@ -522,23 +646,18 @@ class QObject(models.Model):
 
         return 'Unrecognised list type: ' + name
             
-
     # Do this as a property so Django templates can use it
     @property
     def expanded(self):
         return self.get_attr('expanded')
 
 
+"""
 
     @staticmethod
-    def get_settings():
-        return QObject.find_by_name('settings')
-    
-    
-    @staticmethod
-    def find_by_name(name):
+    def find_by_name(qgame, name):
         # Unit tested
-        original_set = QObject.objects.filter(name=name)
+        original_set = QObject.objects.filter(qgame=qgame, name=name)
         if original_set.count() == 0:
             return None
         elif original_set.count() == 1:
@@ -554,7 +673,8 @@ class QObject(models.Model):
             return [q.name for q in QObject.objects.all().order_by('name')]
         else:
             return [q.name for q in QObject.objects.filter(category=option).order_by('name')]
-            
+ 
+ 
     @staticmethod
     def list(option):
         if option == 'all':
@@ -585,9 +705,6 @@ class QObject(models.Model):
         return [x for x in all_objs if x not in exclude]
 
 
-
-            
-
     # Returns a string; every item and location in JS code
     @staticmethod
     def get_js():
@@ -596,14 +713,6 @@ class QObject(models.Model):
             if o.category == 'item' or o.category == 'room':
                 code += o.to_js()
         return code
-
-
-    # Returns a string; the settings in JS code
-    @staticmethod
-    def get_settings_js():
-        code = ''
-        o = QObject.objects.get(category='sttg')
-        return o.to_js()
 
 
           
@@ -619,7 +728,7 @@ class QObject(models.Model):
         # turn the set into a list (as requested)
         return list(seen_twice)
 
-
+"""
 
 
 class QAttr(models.Model):
@@ -634,22 +743,24 @@ class QAttr(models.Model):
     # use the property value to get the value as it is stored in the database, a string
     # use this to get it as the correct type
     def get_value(self):
-        return self.attr.to_type(self.value)
+        return self.attr.to_type(self)
         
         
 
     # Returns a string; this attribute in JS code
-    def to_js(self):
+    def to_js(self, indent = '  '):
         if not self.value and self.value != 0:
             return ''
             
         # Unit tested
         attr_type = self.attr.get_type()
+        if attr_type.ignore_for_js:
+            return ''
         
         if self.attr.category == 'sttg':
             s = 'settings.' + self.attr.name + ' = '
         else:
-            s = '  ' + self.attr.name + ':'
+            s = indent + self.attr.name + ':'
             
         if isinstance(attr_type.to_js, str):
             s += attr_type.to_js.replace('*value*', str(self.value))
@@ -673,7 +784,7 @@ def kick_start():
     QObject.objects.all().delete()
     QAttr.objects.all().delete()
     
-    qgame = QGame.objects.create(name='example', version=VERSION)
+    qgame = QGame.objects.create(name='example', version=0, subversion=1)
 
     for cat in META_ATTRS:
         for idx, key in enumerate(META_ATTRS[cat]):
@@ -706,9 +817,16 @@ def kick_start():
                     mattr.save()
             
 
-    o = QObject.objects.create(name='settings', category='sttg')
+    o = QObject.objects.create(name='settings', category='sttg', qgame=qgame)
     for data in INIT_OBJECTS:
         o = QObject.objects.create(name=data[0], category=data[1], qgame=qgame)
+
+    for data in INIT_EXITS:
+        from_room = qgame.find_by_name(data[1])
+        to_room = qgame.find_by_name(data[2])
+        ext = from_room.create_exit(to_room, data[3], data[0])
+        if len(data) == 5:
+            ext.set_attr('msg', data[4])
             
     for data in INIT_ATTRS:
         obj = QObject.objects.get(name=data[0])
@@ -723,9 +841,4 @@ def kick_start():
             value=data[2]
         )
         
-    hall = QObject.find_by_name('hall')
-    lounge = QObject.find_by_name('lounge')
-    kitchen = QObject.find_by_name('kitchen')
-    hall.create_link(lounge, 'west')
-    hall.create_link(kitchen, 'south')
             

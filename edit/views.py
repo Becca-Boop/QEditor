@@ -23,11 +23,10 @@ def play(request):
     return render(request, "edit/play.html", context)
 
 def object_list(request):
-    #room_list = QObject.objects.filter(category='room').order_by('name')
-    nowhere_list = QObject.get_not_attr(category='item', attr_name='loc')
-    region_list = QObject.objects.filter(category='regn').order_by('name')
     qgame = QGame.objects.first()
-    print(qgame)
+    nowhere_list = qgame.get_not_attr(category='item', attr_name='loc')
+    region_list = QObject.objects.filter(category='regn').order_by('name')
+    #print(qgame)
     context = {"nowhere_list": nowhere_list, 'region_list':region_list, 'qgame':qgame}
     return render(request, "edit/region_list.html", context)
     #return render(request, "edit/object_list.html", context)
@@ -54,9 +53,9 @@ def object_edited(request, object_id):
 def item_added(request, object_id):
     qobject = get_object_or_404(QObject, pk=object_id)
     name = request.POST['__name__']
-    print('item_added')
-    print(qobject.name)
-    print(name)
+    #print('item_added')
+    #print(qobject.name)
+    #print(name)
 
     new_object = QObject.objects.create(category='item', name=name, qgame=qobject.qgame)
     new_object.set_attr('loc', qobject.name)
@@ -125,10 +124,12 @@ def settings(request):
 
 
 def settings_js(request):
-    return HttpResponse(QObject.get_settings_js(), content_type='text/javascript')
+    qgame = QGame.objects.first()
+    return HttpResponse(qgame.to_settings_js(), content_type='text/javascript')
 
 def data_js(request):
-    return HttpResponse(QObject.get_js(), content_type='text/javascript')
+    qgame = QGame.objects.first()
+    return HttpResponse(qgame.to_data_js(), content_type='text/javascript')
 
 def code_js(request):
     return HttpResponse("", content_type='text/javascript')

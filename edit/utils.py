@@ -1,7 +1,7 @@
 
 """
 Constructs a drop-down menu in HTML with the given data.
-Notethat selected is the element, not the index
+Note that selected is the element (the HTML value, which is actually the name for a dictionary), not the index
 """
 def select_choice(name, options, selected):
     if hasattr(selected, 'name'):
@@ -29,11 +29,11 @@ def select_choice(name, options, selected):
 
 """
 Converts a string into another string!
-But the new string in JavaScript code for an array.
+But the new string is JavaScript code for an array.
 """
-def string_array_to_js(list_as_string):
+def string_array_to_js(list_as_string, sep):
     strg = '[\n'
-    for s in list_as_string.split('|'):
+    for s in list_as_string.split(sep):
         strg += '    "' + s + '",\n'
     strg += '  ]'
     return strg
@@ -90,6 +90,7 @@ def test_rule(obj, settings, rule):
 ####  EXITS  #####
 
 
+# Give an HTML snippet for a table cell for the exit of the object in the given direction
 def exit_td(obj, dr):
     ext = obj.find_exit(dr)
     if ext:

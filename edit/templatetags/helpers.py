@@ -44,7 +44,7 @@ def help_link(page, name = None):
 @register.simple_tag
 def attr_row(mattr, qobject, edit=True):
     # check if applicable
-    settings = QObject.get_settings()
+    settings = qobject.qgame.get_settings()
     if not test_rules(qobject, settings, mattr):
         return ''
         
@@ -77,7 +77,8 @@ def attr_row(mattr, qobject, edit=True):
     
 @register.simple_tag
 def warnings():
-    duplicates = QObject.get_duplicates()
+    qgame = QGame.objects.first() # temp hack!!!!
+    duplicates = qgame.get_duplicates()
     #print(duplicates)
     if duplicates:
         return mark_safe('<div class="warning">WARNING: Duplicated object names: ' + ', '.join(duplicates) + '</div>')

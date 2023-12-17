@@ -224,7 +224,7 @@ META_ATTRS = {
                 ('loc',            'Origin',            False, 'nob',  '', 'The exit starts from here.'),
                 ('direction',      'Direction',         False, 'nst',  '', 'North, south, in, out, etc.'),
                 ('destination',    'Destination',       False, 'loc',  '', 'The exit will take the player to this location.'),
-                ('exit_type',      'Exit type',         True,  'chc',  '', "Special exits can be set up using an alternative type.", ['Exit', 'NonExit', 'BarredExit', 'WayIn', 'WayOut', 'ClimbExit', 'StairsUp', 'StrairsDown']),
+                ('exit_type',      'Exit type',         True,  'chc',  '', "Special exits can be set up using an alternative type.", ['Simple', 'Exit', 'NonExit', 'BarredExit', 'WayIn', 'WayOut', 'ClimbExit', 'StairsUp', 'StrairsDown']),
                 ('related_item',  'Related item',       True,  'itm',  '', "Only for WayIn, ClimbExit, StairsUp and StairsDown."),
                 ('msg',            'Message when used', False, 'txt',  '', "Used when the player uses the exit."),
                 ('scenery',        'Scenery',           False,  'cbx',  '', "Is this exit scenery?"),
@@ -258,6 +258,15 @@ INIT_OBJECTS = [
     ('hat', 'item'),
     ('ball', 'item'),
     ('Lara', 'item'),
+]
+
+
+INIT_EXITS = [
+    ('Simple', 'kitchen', 'hall', 'north'),
+    ('Simple', 'hall', 'kitchen', 'south'),
+    ('Exit', 'lounge', 'hall', 'west'),
+    ('Exit', 'hall', 'lounge', 'east', 'You head east, though the great door.'),
+
 ]
 
 
@@ -296,4 +305,5 @@ INIT_ATTRS = [
     ('Lara', 'loc', 'lounge'),
     ('Lara', 'examine', 'A normal-sized rabbit with a carrot obsession.'),
 ]
+
 
