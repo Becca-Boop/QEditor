@@ -17,9 +17,7 @@ class MetaPage(models.Model):
     alias = models.CharField(max_length=12)
     help_text = models.TextField(blank=True, null=True)
     help_link = models.CharField(max_length=20, blank=True, null=True)
-    return_type = models.CharField(max_length=10, blank=True, null=True)
-    params = models.CharField(max_length=20, blank=True, null=True)
-    order = models.IntegerField(default=-1)
+    #order = models.IntegerField(default=-1)
     category = models.CharField(max_length=4, default='item')  # item, room or sttg
     rules = models.TextField()
     home = models.BooleanField(default=False)
@@ -224,11 +222,10 @@ class MetaAttr(models.Model):
     name = models.CharField(max_length=20)
     display_name = models.CharField(max_length=20)
     page = models.ForeignKey(MetaPage, on_delete=models.CASCADE)    
-    order = models.IntegerField(default=-1)
     advanced = models.BooleanField(default=False)
     attr_type = models.CharField(max_length=3)
     help_text = models.TextField()
-    category = models.CharField(max_length=4, default='item')  # item, room, sttg, game, opts, exit, regn
+    category = models.CharField(max_length=4, default='item')  # item, room, sttg, game, exit, regn
     rules = models.TextField()
     options_as_string = models.TextField(default='')
     return_type= models.CharField(max_length=12, blank=True, null=True)
@@ -652,84 +649,6 @@ class QObject(models.Model):
         return self.get_attr('expanded')
 
 
-"""
-
-    @staticmethod
-    def find_by_name(qgame, name):
-        # Unit tested
-        original_set = QObject.objects.filter(qgame=qgame, name=name)
-        if original_set.count() == 0:
-            return None
-        elif original_set.count() == 1:
-            return original_set.first()
-        else:
-            raise RuntimeError('Found multiple objects with name ' + name)
-
-
-    @staticmethod
-    def list_names(option):
-        # Unit tested
-        if option == 'all':
-            return [q.name for q in QObject.objects.all().order_by('name')]
-        else:
-            return [q.name for q in QObject.objects.filter(category=option).order_by('name')]
- 
- 
-    @staticmethod
-    def list(option):
-        if option == 'all':
-            return QObject.objects.all().order_by('name')
-        else:
-            return QObject.objects.filter(category=option).order_by('name')
-            
-
-    # Return a list of items that have no location set
-    @staticmethod
-    def get_by_attr(category, attr_name, value):
-        mattr = MetaAttr.objects.get(category=category, name=attr_name)
-        lst = []
-        for qattr in QAttr.objects.filter(attr=mattr, value=value):
-            lst.append(qattr.qobject)
-        return lst
-
-
-    # Return a list of items that do not have the given attribute
-    @staticmethod
-    def get_not_attr(category, attr_name):
-        mattr = MetaAttr.objects.get(category=category, name=attr_name)
-        all_objs = QObject.objects.filter(category=category).order_by('name')
-        
-        exclude = []
-        for qattr in QAttr.objects.filter(attr=mattr):
-            exclude.append(qattr.qobject)
-        return [x for x in all_objs if x not in exclude]
-
-
-    # Returns a string; every item and location in JS code
-    @staticmethod
-    def get_js():
-        code = ''
-        for o in QObject.objects.all().order_by('name'):
-            if o.category == 'item' or o.category == 'room':
-                code += o.to_js()
-        return code
-
-
-          
-    # Returns a list of duplicated names
-    @staticmethod
-    def get_duplicates():
-        #print('here')
-        names = QObject.list_names('all')
-        seen = set()
-        seen_add = seen.add
-        # adds all elements it doesn't know yet to seen and all other to seen_twice
-        seen_twice = set( x for x in names if x in seen or seen_add(x) )
-        # turn the set into a list (as requested)
-        return list(seen_twice)
-
-"""
-
 
 class QAttr(models.Model):
     value = models.TextField()
@@ -787,9 +706,9 @@ def kick_start():
     qgame = QGame.objects.create(name='example', version=0, subversion=1)
 
     for cat in META_ATTRS:
-        for idx, key in enumerate(META_ATTRS[cat]):
+        for key in META_ATTRS[cat]:
             meta = META_ATTRS[cat][key]
-            page = MetaPage.objects.create(name=key, alias=meta['alias'], category=cat, order=idx)
+            page = MetaPage.objects.create(name=key, alias=meta['alias'], category=cat)
             for key in ['help_link', 'rules', 'home']:
                 if key in meta:
                     setattr(page, key, meta[key])

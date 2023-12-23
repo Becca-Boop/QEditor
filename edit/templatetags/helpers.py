@@ -15,6 +15,23 @@ def truncate(str, n):
 
 
 
+
+
+
+@register.filter
+def to_html(s):
+    if s.startswith('# '):
+        return mark_safe('<h3>' + s[2:] + '</h3>')
+    if s.startswith('## '):
+        return mark_safe('<h4>' + s[2:] + '</h4>')
+
+    return mark_safe('<p>' + s + '</p>')
+
+
+
+
+
+
 @register.simple_tag
 def page_button(opt, page):
     s = '<input type="button" value="' + opt.alias + '" onclick="submit_page(\'' + opt.name + '\')"'

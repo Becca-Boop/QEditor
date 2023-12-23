@@ -9,10 +9,6 @@ app_name = "edit"
 
 urlpatterns = [
 
-    # Product
-    # Cannot add or delete
-    # Can edit the comment
-    # Can create a batch for
     path("object", views.object_list, name="object_list"),
     path("object/reset", views.reset, name="reset"),
     path("object/play", views.play, name="play"),

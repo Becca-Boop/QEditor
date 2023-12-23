@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% load helpers %}
+
+{% block content %}
+    <h3>Help</h3>
+    {% for line in data %}
+         {{ line|to_html }}
+    {% endfor %}
+
+{% endblock %}
+

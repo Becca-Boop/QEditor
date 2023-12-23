@@ -2,6 +2,11 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponse
 from django.utils.html import mark_safe
 
+from pathlib import Path
+import os
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+HELP_DIR = os.path.join(BASE_DIR, "help")
 
 
 
@@ -143,7 +148,17 @@ def style_css(request):
 
 
 def help(request, page):
-    return render(request, "edit/help/" + page + ".html", {})
+    path = os.path.join(BASE_DIR, "edit", "help", page + ".txt")
+    print(path)
+    lines = ['File not found']
+    f = open(path, "r")
+    try:
+        lines = f.readlines()
+    finally:
+        f.close()
+
+    return render(request, "edit/help.html", {"data":lines})
+    #return render(request, "edit/help/" + page + ".html", {})
 
 
 def error(request, error_str):
