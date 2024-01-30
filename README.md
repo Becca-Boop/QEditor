@@ -15,7 +15,7 @@ python -m pip install Django
 ```
 Then go to the folder you install QEditor:
 ```
-python manager.py runserver
+python manage.py runserver
 ```
 Now open up yuour browser, and go to http://localhost:8000
 
