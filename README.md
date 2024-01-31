@@ -17,26 +17,32 @@ Then go to the folder you install QEditor:
 ```
 python manage.py runserver
 ```
-Now open up yuour browser, and go to http://localhost:8000
+Now open up yuour browser, and go to http://localhost:8000. You should see a welcome page, with a link to the editor. Click the link, and check it works okay.
+
+# Install QuestJS
+
+If you try to play the game, it will not work yet. You need to add the QuestJS files. These are not included as they get updated separately. If a new version of QuestJS comes out, this software does not get updated, but you can download the new version and install the files just the same
 
 QuestJS can be found here:
 https://github.com/ThePix/QuestJS/wiki
 
-You will need to copy the "assets", "lang" and "lib" folders from there to the "edit/static/edit/" folder to be able to play your game from the editor.
+Click on the Code button (kind of middle-right), and select "Download Zip" from the drop-down. Unzip the file, and then you need to copy across three folders - "assets", "lang" and "lib" - from there to the "edit/static/edit/" folder. You should then be able to play your game from the editor.
 
-You can make yourself a superuser!
+# Super-user
+
+This is optional, but you can make yourself a superuser!
 ```
 python manage.py createsuperuser
 ```
-This will allow you to go to the database admin page. One possible reason to do that is to delete an item, another is to move an item out of a location that no longer exists.
+This will allow you to go to the database admin page. One possible reason to do that is to delete an item, another is to move an item out of a location that no longer exists. 
 
 
-### To-Do List
+# To-Do List
 
 Some areas for improvement
 
 * Export facility, with versioning and options for play vs beta
-* Better script support. Should be possibly to check code if we know what the parameters are. Use Blockly?
+* Better script support. Should be possible to check code if we know what the parameters are. Use Blockly?
 * Responses (in the QuestJS sense) - used by ask/tell, reactions and other things
 * Easy way to add custom attributes
 * Better styling, including icons for links on home page
@@ -45,5 +51,5 @@ Some areas for improvement
 * Use Push API (https://developer.mozilla.org/en-US/docs/Web/API/Push_API) and JSON/XMLHttp to update pages
 * Import from Quest 5
 * Import from QuestJS
-* Multiple users (security being the big issue)
+
     
