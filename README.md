@@ -6,6 +6,12 @@ This is in a fairly early stage of development, so do not expect too much yet! I
 
 It is written in Python using Django, and is run as a web server. Once it is up and running, access it via your browser. Help files are included, and accessed from within it.
 
+# Get QEditor
+
+Firstly, you need QEditor. Click the "Code" button towards the top right of this page, and select download. The code will be downloaded as a ZIP file; you need to extract that into a convenient location.
+
+# Install Python/Django
+
 To run it you will need to download Python and Django. Download Python from here, if you do not already have it:
 https://www.python.org/downloads/
 
@@ -13,8 +19,14 @@ Check it works by typing "python" at a command line. it should take you to an in
 ```
 python -m pip install Django
 ```
-Then go to the folder you install QEditor:
+If that does not work, you may need to install PIP first - I have had people say this is the case on Linux. The following may do the trick, but I did not have to do it, so I am not sure.
 ```
+wget https://bootstrap.pypa.io/get-pip.py
+python ./get-pip.py
+```
+With Django installed, go to the folder you unzipped QEditor into, and then run it:
+```
+cd [whatever folder you unzipped into]
 python manage.py runserver
 ```
 Now open up yuour browser, and go to http://localhost:8000. You should see a welcome page, with a link to the editor. Click the link, and check it works okay.
@@ -26,7 +38,7 @@ If you try to play the game, it will not work yet. You need to add the QuestJS f
 QuestJS can be found here:
 https://github.com/ThePix/QuestJS/wiki
 
-Click on the Code button (kind of middle-right), and select "Download Zip" from the drop-down. Unzip the file, and then you need to copy across three folders - "assets", "lang" and "lib" - from there to the "edit/static/edit/" folder. You should then be able to play your game from the editor.
+Click on the Code button (kind of middle-right), and select "Download Zip" from the drop-down, just as you did with QEDitor. Unzip the file, and then you need to copy across three folders - "assets", "lang" and "lib" - from there to the "edit/static/edit/" folder. You should then be able to play your game from the editor.
 
 # Super-user
 
