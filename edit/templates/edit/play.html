@@ -17,15 +17,22 @@
   
   <link rel="shortcut icon" type="image/x-icon" href="{% static 'edit/icons/favicon.png' %}" />
 
+
+  <script>
+    let folder = ''
+    let resourcesFolder = '/static/edit/'
+    let loaded = false
+    const qeditor = true
+  </script>
+
+
   <script src="{% static 'edit/lib/_util.js' %}"></script>
   <script src="{% static 'edit/lib/_settings.js' %}"></script>
+
   <script>
-    let folder = '/edit/object'
-    let loaded = false
-    const qedit = true
 
     const myScript = document.createElement("script")
-    myScript.setAttribute("src", folder + '/settings.js')
+    myScript.setAttribute("src", '/edit/object/settings.js')
     myScript.onload = function() {
       settings.writeScript(folder, "{% static 'edit/' %}", "")
     }
