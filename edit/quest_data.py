@@ -132,6 +132,8 @@ META_ATTRS = {
             'alias':'Descriptions',
             'attrs':[
                 ('examine',        'Description',     False, 'txt', '', 'This text will be displayed when the player examines the object.'),
+                ('smell',          'Smell',           True,  'txt', '', 'What can the player smell from the item?'),
+                ('listen',         'Listen',          True,  'txt', '', 'What can the player hear from the item?'),
             ],
         },
 
@@ -303,7 +305,5 @@ INIT_ATTRS = [
     ('Lara', 'npc', True),
     ('Lara', 'gender', 'female'),
     ('Lara', 'loc', 'lounge'),
-    ('Lara', 'examine', 'A normal-sized rabbit with a carrot obsession.'),
+    ('Lara', 'examine', 'A normal-sized rabbit with a carrot obsession.'),  
 ]
-
-
