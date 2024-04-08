@@ -96,7 +96,7 @@ class MetaObjectAttrType(MetaAttrType):
 
 # MetaAttr objects define the attributes available
 # An item has an "alias" attribute. The details of what an alias attribute is
-# (as opposed to the actual value) is in the MtaAttr.
+# (as opposed to the actual value) is in the MetaAttr.
 # A MetaAttr belongs to a MetaPage, determining which tab it is shown on.
 # It has a category, which should match that of the MetaPage
 class MetaAttr(models.Model):
@@ -277,7 +277,7 @@ class MetaAttr(models.Model):
 
 
 
-# Currently multiple games are not supported, but they may well be n the future
+# Currently multiple games are not supported, but they may well be in the future
 # To facilitate that, every object belongs to a game object.
 # Also handles version tracking
 class QGame(models.Model):
