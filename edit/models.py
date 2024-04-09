@@ -761,3 +761,14 @@ def kick_start():
         )
         
             
+class ItemToItemLinks(models.Model):
+
+    npc = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
+    item = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
+    take = models.BooleanField(default=False)
+    response = models.TextField()
+
+    
+
+    def __str__(self):
+        return self.name
