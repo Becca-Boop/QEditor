@@ -2,6 +2,8 @@ from django.db import models
 
 from .quest_data import *
 from .utils import *
+from django.utils.html import mark_safe
+
 
 
 VERSION = '0.1'
@@ -204,7 +206,11 @@ class MetaAttr(models.Model):
         MetaAttrType("spc", "special", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
             to_js=lambda x: '',
         ),
-                
+
+        # Links
+        MetaAttrType("lnk", "link", lambda mattr, value, obj: obj.get_link_widget(mattr),
+            big_widget=True,
+        ),    
         
         # Exits
         MetaAttrType("ext", "exit", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
@@ -396,7 +402,9 @@ class QObject(models.Model):
             s += ' ("' + alias + '")'
         return s
        
-       
+    #def create_object_link(self, mattr, value):
+        #return "Lara"
+    
     # Create an exit from this location to the given destination and also the reverse
     # Currently only used in one test
     def create_link(self, dest, dr):
@@ -592,6 +600,9 @@ class QObject(models.Model):
                 if attr.attr_type == 'cbx' or  attr.attr_type == 'btn':
                     value = attr.name in data
                     self.set_attr(attr.name, value)
+                
+                elif attr.attr_type == 'lnk':
+                    self.create_object_link(attr, data)     
                     
                 elif attr.name in data:
                     value = data[attr.name]
@@ -629,7 +640,7 @@ class QObject(models.Model):
             s += '</tr><tr>'
             s += '</table>'
             
-            options = QObject.list_names('room')
+            options = self.qgame.list_names('room')
             s += '<br/>New exit to: '
             s += select_choice('destination', options, None)
             s += '<br/><input type="checkbox" id="exit-is-link"/>Exit in reverse direction too?'
@@ -642,11 +653,29 @@ class QObject(models.Model):
             return s
 
         return 'Unrecognised list type: ' + name
+    
+    def get_link_widget(self, mattr):
+        s = '<ul>'
+        for o in self.get_contents():
+            s += '<li><a href="/edit/object/' + str(o.id) + '" target="_blank">' + o.display_name() + '</a></li>'
+    
+        options = self.qgame.list_names('item')
+        s += '</ul>'
+        s += select_choice('giveitems', options, None)
+        s += '<input type="checkbox" id="success"/>Success?'
+        s += '<br/><textarea rows="7" cols="120" name="response">*Response*</textarea>'
+        return mark_safe(s)
+
+        
+
             
     # Do this as a property so Django templates can use it
     @property
     def expanded(self):
         return self.get_attr('expanded')
+
+    
+            
 
 
 
@@ -767,7 +796,7 @@ class ItemToItemLinks(models.Model):
     item = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
     success = models.BooleanField(default=False)
     response = models.TextField()
-
+    link_type = models.CharField(max_length=12, default=None)
     
 
     def __str__(self):
