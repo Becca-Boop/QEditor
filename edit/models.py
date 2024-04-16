@@ -402,8 +402,15 @@ class QObject(models.Model):
             s += ' ("' + alias + '")'
         return s
        
-    #def create_object_link(self, mattr, value):
-        #return "Lara"
+    def create_object_link(self, mattr, value):
+        if self == 'name':
+            raise ValueError("Trying to create link from an item to itself")
+        #npc = self.create_exit(self, reverse_dir(dr))
+        #item = value.create_exit(dest, dr)
+        #ItemToItemLinks.objects.create(self, mattr.name, mattr.success, mattr.response, 'give')
+        ItemToItemLinks.objects.create(primaryitem=self, secondaryitem=mattr.name, success=True, response="Oh my a hat", link_type='give')
+
+
     
     # Create an exit from this location to the given destination and also the reverse
     # Currently only used in one test
@@ -792,12 +799,12 @@ def kick_start():
             
 class ItemToItemLinks(models.Model):
 
-    npc = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
-    item = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
+    primaryitem = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
+    secondaryitem = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
     success = models.BooleanField(default=False)
     response = models.TextField()
     link_type = models.CharField(max_length=12, default=None)
     
 
-    def __str__(self):
-        return self.name
+    def get_value(self):
+        return self.attr.to_type(self)
