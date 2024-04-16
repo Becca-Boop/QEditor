@@ -402,13 +402,20 @@ class QObject(models.Model):
             s += ' ("' + alias + '")'
         return s
        
-    def create_object_link(self, mattr, value):
+    def create_object_link(self, mattr, data):
         if self == 'name':
             raise ValueError("Trying to create link from an item to itself")
-        #npc = self.create_exit(self, reverse_dir(dr))
-        #item = value.create_exit(dest, dr)
-        #ItemToItemLinks.objects.create(self, mattr.name, mattr.success, mattr.response, 'give')
-        ItemToItemLinks.objects.create(primaryitem=self, secondaryitem=mattr.name, success=True, response="Oh my a hat", link_type='give')
+        
+        #attrs = QAttr.objects.filter(qobject=data)
+        #attr = MetaAttr.get(name=attr.attr.name, category='item')
+        
+        obj = QObject.objects.get(name=data[0])
+        try:
+            attr = MetaAttr.objects.get(name=data[0], category=obj.category)
+        except MetaAttr.DoesNotExist as exc:
+            raise RuntimeError(f"Failed to find MetaAttr with name={data["name"]} category={obj.category}") from exc
+
+        ItemToItemLinks.objects.create(primaryobject=self, secondaryobject=attr, success=True, response="Oh my a hat", link_type='give')
 
 
     
@@ -799,8 +806,8 @@ def kick_start():
             
 class ItemToItemLinks(models.Model):
 
-    primaryitem = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
-    secondaryitem = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
+    primaryobject = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
+    secondaryobject = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
     success = models.BooleanField(default=False)
     response = models.TextField()
     link_type = models.CharField(max_length=12, default=None)

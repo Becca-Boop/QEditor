@@ -86,8 +86,8 @@ def link_added(request, object_id):
     response = request.POST['__response__']
 
 
-    new_object = ItemToItemLinks.objects.create(primaryitem=name, secondaryitem=item, success=success, response=response, link_type='give')
-    return redirect('/edit/object/' + str(new_object.id))
+    new_object = ItemToItemLinks.objects.create(primaryobject=name, secondaryobject=item, success=success, response=response, link_type='give')
+    return redirect('/edit/object/' + str(item.id))
 
     
 def exit_added(request, object_id):
