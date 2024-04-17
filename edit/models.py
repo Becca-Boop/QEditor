@@ -402,20 +402,31 @@ class QObject(models.Model):
             s += ' ("' + alias + '")'
         return s
        
-    def create_object_link(self, mattr, data):
-        if self == 'name':
-            raise ValueError("Trying to create link from an item to itself")
-        
-        #attrs = QAttr.objects.filter(qobject=data)
-        #attr = MetaAttr.get(name=attr.attr.name, category='item')
-        
-        obj = QObject.objects.get(name=data[0])
-        try:
-            attr = MetaAttr.objects.get(name=data[0], category=obj.category)
-        except MetaAttr.DoesNotExist as exc:
-            raise RuntimeError(f"Failed to find MetaAttr with name={data["name"]} category={obj.category}") from exc
 
-        ItemToItemLinks.objects.create(primaryobject=self, secondaryobject=attr, success=True, response="Oh my a hat", link_type='give')
+    # create a link between a primary object (npc) and a secondary object (item)
+    def create_object_link(self, mattr, data):       
+        if data['giveitems'] != '-1':
+            obj = QObject.objects.get(name=data['giveitems'])
+
+            try:
+                if data['success'] != None:
+                    success = True
+            except:
+                success = False
+
+            response = data['response']
+
+
+            if self.id == obj.id:
+                raise ValueError("Trying to create link from an item to itself")
+            
+            links = ItemToItemLinks.objects.filter(primary_object=self)
+            for element in links:
+                if obj == element.secondary_object:
+                    raise ValueError("Trying to create link from a previously linked item")
+
+            
+            ItemToItemLinks.objects.create(primary_object=self, secondary_object=obj, success=success, response=response, link_type='give')
 
 
     
@@ -535,6 +546,30 @@ class QObject(models.Model):
         attrs = QAttr.objects.filter(qobject=self)
         for attr in attrs:
             s += attr.to_js()
+
+        # giving
+        itemlinks = ItemToItemLinks.objects.filter(primary_object=self, link_type='give')
+        if len(itemlinks) > 0:
+            s += 'receiveItems:[\n'
+            for element in itemlinks:
+                s += '{\nitem:"'
+                s += element.secondary_object.name + '",\n'
+
+                #s += 'script:function(p) {\n msg("'
+                #s += element.response
+                #s += '")\n'
+                if element.success == True:
+                    s += 'script:function(p) {\n msg("'
+                    s += element.response
+                    s += '")\n'
+                    s += 'util.giveitem(p)\n}'
+                else:
+                    s += 'msg:"'
+                    s += element.response
+                    s += '",'
+                    s += '\nfailed:true,\n}'
+                s += '},\n'
+            s += '],\n'
 
         # exits
         if self.category == 'room':
@@ -672,12 +707,25 @@ class QObject(models.Model):
         s = '<ul>'
         for o in self.get_contents():
             s += '<li><a href="/edit/object/' + str(o.id) + '" target="_blank">' + o.display_name() + '</a></li>'
-    
-        options = self.qgame.list_names('item')
         s += '</ul>'
+
+        options = self.qgame.list_names('item')
+        data = ItemToItemLinks.objects.filter(primary_object=self, link_type='give')
+        for element in data:            
+            s += select_choice('giveitems', options, element.secondary_object)
+            if element.success == True:
+                s += '<input type="checkbox" name="success" id="success" checked/>Success?'
+            else:
+                s += '<input type="checkbox" name="success" id="success"/>Success?' 
+            s += '<br/><textarea rows="7" cols="120" name="response">'
+            s += element.response
+            s += '</textarea>'
+            s += '<br/>'
+
         s += select_choice('giveitems', options, None)
-        s += '<input type="checkbox" id="success"/>Success?'
+        s += '<input type="checkbox" name="success" id="success"/>Success?'
         s += '<br/><textarea rows="7" cols="120" name="response">*Response*</textarea>'
+        s += '<br/>'
         return mark_safe(s)
 
         
@@ -806,8 +854,8 @@ def kick_start():
             
 class ItemToItemLinks(models.Model):
 
-    primaryobject = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
-    secondaryobject = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
+    primary_object = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
+    secondary_object = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
     success = models.BooleanField(default=False)
     response = models.TextField()
     link_type = models.CharField(max_length=12, default=None)
