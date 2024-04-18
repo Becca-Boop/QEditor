@@ -21,6 +21,8 @@ urlpatterns = [
     path("object/<int:object_id>/item_added", views.item_added, name="item_added"),
     path("object/item_added", views.item_added_nowhere, name="item_added_nowhere"),
     path("object/<int:object_id>/exit_added", views.exit_added, name="exit_added"),
+    path("object/<int:object_id>/link_added", views.link_added, name="link_added"),
+
     
     path("settings", views.settings, name="settings"),
     

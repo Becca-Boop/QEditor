@@ -2,6 +2,8 @@ from django.db import models
 
 from .quest_data import *
 from .utils import *
+from django.utils.html import mark_safe
+
 
 
 VERSION = '0.1'
@@ -96,7 +98,7 @@ class MetaObjectAttrType(MetaAttrType):
 
 # MetaAttr objects define the attributes available
 # An item has an "alias" attribute. The details of what an alias attribute is
-# (as opposed to the actual value) is in the MtaAttr.
+# (as opposed to the actual value) is in the MetaAttr.
 # A MetaAttr belongs to a MetaPage, determining which tab it is shown on.
 # It has a category, which should match that of the MetaPage
 class MetaAttr(models.Model):
@@ -204,7 +206,11 @@ class MetaAttr(models.Model):
         MetaAttrType("spc", "special", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
             to_js=lambda x: '',
         ),
-                
+
+        # Links
+        MetaAttrType("lnk", "link", lambda mattr, value, obj: obj.get_link_widget(mattr),
+            big_widget=True,
+        ),    
         
         # Exits
         MetaAttrType("ext", "exit", lambda mattr, value, obj: obj.get_special_widget(mattr.name),
@@ -277,7 +283,7 @@ class MetaAttr(models.Model):
 
 
 
-# Currently multiple games are not supported, but they may well be n the future
+# Currently multiple games are not supported, but they may well be in the future
 # To facilitate that, every object belongs to a game object.
 # Also handles version tracking
 class QGame(models.Model):
@@ -396,7 +402,34 @@ class QObject(models.Model):
             s += ' ("' + alias + '")'
         return s
        
-       
+
+    # create a link between a primary object (npc) and a secondary object (item)
+    def create_object_link(self, mattr, data):       
+        if data['giveitems'] != '-1':
+            obj = QObject.objects.get(name=data['giveitems'])
+
+            try:
+                if data['success'] != None:
+                    success = True
+            except:
+                success = False
+
+            response = data['response']
+
+
+            if self.id == obj.id:
+                raise ValueError("Trying to create link from an item to itself")
+            
+            links = ItemToItemLinks.objects.filter(primary_object=self)
+            for element in links:
+                if obj == element.secondary_object:
+                    raise ValueError("Trying to create link from a previously linked item")
+
+            
+            ItemToItemLinks.objects.create(primary_object=self, secondary_object=obj, success=success, response=response, link_type='give')
+
+
+    
     # Create an exit from this location to the given destination and also the reverse
     # Currently only used in one test
     def create_link(self, dest, dr):
@@ -514,6 +547,37 @@ class QObject(models.Model):
         for attr in attrs:
             s += attr.to_js()
 
+        # giving
+        itemlinks = ItemToItemLinks.objects.filter(primary_object=self, link_type='give')
+        if len(itemlinks) > 0:
+            s += 'receiveItems:[\n'
+            for element in itemlinks:
+                s += '{\nitem:"'
+                s += element.secondary_object.name + '",\n'
+
+                #s += 'script:function(p) {\n msg("'
+                #s += element.response
+                #s += '")\n'
+                if element.success == True:
+                    s += 'script:function(p) {\n msg("'
+                    s += element.response
+                    s += '")\n'
+                    s += 'util.giveItem(p)\n'
+                    s += 'return true \n } \n'
+                else:
+                    s += 'script:function(p) {\n msg("'
+                    s += element.response
+                    s += '")\n'
+                    s += 'return false \n } \n'
+
+                    # s += 'msg:"'
+                    # s += element.response
+                    # s += '",'
+                    # s += '\nfailed:true,\n}'
+                s += '},\n'
+            s += '],\n'
+            #s += 'receiveItems:[\n{\n item:"hat", script:function(p) { \n msg("\'Oh!\' says Kyle. \'Is this a hat?\'") \n util.giveItem(p) \n return true\n} \n },\n],'
+
         # exits
         if self.category == 'room':
             exits = self.get_contents(category='exit')
@@ -592,6 +656,9 @@ class QObject(models.Model):
                 if attr.attr_type == 'cbx' or  attr.attr_type == 'btn':
                     value = attr.name in data
                     self.set_attr(attr.name, value)
+                
+                elif attr.attr_type == 'lnk':
+                    self.create_object_link(attr, data)     
                     
                 elif attr.name in data:
                     value = data[attr.name]
@@ -629,7 +696,7 @@ class QObject(models.Model):
             s += '</tr><tr>'
             s += '</table>'
             
-            options = QObject.list_names('room')
+            options = self.qgame.list_names('room')
             s += '<br/>New exit to: '
             s += select_choice('destination', options, None)
             s += '<br/><input type="checkbox" id="exit-is-link"/>Exit in reverse direction too?'
@@ -642,11 +709,42 @@ class QObject(models.Model):
             return s
 
         return 'Unrecognised list type: ' + name
+    
+    def get_link_widget(self, mattr):
+        s = '<ul>'
+        for o in self.get_contents():
+            s += '<li><a href="/edit/object/' + str(o.id) + '" target="_blank">' + o.display_name() + '</a></li>'
+        s += '</ul>'
+
+        options = self.qgame.list_names('item')
+        data = ItemToItemLinks.objects.filter(primary_object=self, link_type='give')
+        for element in data:            
+            s += select_choice('giveitems', options, element.secondary_object)
+            if element.success == True:
+                s += '<input type="checkbox" name="success" id="success" checked/>Success?'
+            else:
+                s += '<input type="checkbox" name="success" id="success"/>Success?' 
+            s += '<br/><textarea rows="7" cols="120" name="response">'
+            s += element.response
+            s += '</textarea>'
+            s += '<br/>'
+
+        s += select_choice('giveitems', options, None)
+        s += '<input type="checkbox" name="success" id="success"/>Success?'
+        s += '<br/><textarea rows="7" cols="120" name="response">*Response*</textarea>'
+        s += '<br/>'
+        return mark_safe(s)
+
+        
+
             
     # Do this as a property so Django templates can use it
     @property
     def expanded(self):
         return self.get_attr('expanded')
+
+    
+            
 
 
 
@@ -761,3 +859,14 @@ def kick_start():
         )
         
             
+class ItemToItemLinks(models.Model):
+
+    primary_object = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='PrimaryKey')
+    secondary_object = models.ForeignKey(QObject, on_delete=models.CASCADE, related_name='SecondaryKey')    
+    success = models.BooleanField(default=False)
+    response = models.TextField()
+    link_type = models.CharField(max_length=12, default=None)
+    
+
+    def get_value(self):
+        return self.attr.to_type(self)

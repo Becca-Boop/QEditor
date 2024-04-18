@@ -109,7 +109,7 @@ META_ATTRS = {
                 ('gender',         'Gender',          False, 'gdr', '', 'Determines the pronouns to use.'),
                 ('loc',            'Location',        False, 'obj', '', 'The name of the object where this item is located.'),
                 ('scenery',        'Scenery',         False, 'cbx', '', 'Is this item scenery?'),
-                ('parserPriority', 'Parser priority',  True,  'int', '', 'Give a bonus, making this item more like;y to be chosen by the parser (or negative to be less likely).'),
+                ('parserPriority', 'Parser priority',  True,  'int', '', 'Give a bonus, making this item more likely to be chosen by the parser (or negative to be less likely).'),
                 ('excludeFromAll', 'Exclude from all',True,  'cbx', '', 'Do not include this item when user does GET ALL, etc.'),
                 ('item-list',      'Items here',      False, 'spc',  '', "These items are contained by this item"),
             ],
@@ -186,6 +186,7 @@ META_ATTRS = {
                 ('none',         'Conversations',       False, 'nul', '!@conversations=ASK/ABOUT !@conversations=S', 'Select a conversation mode from settings and the appropriate options will appear here.'),
                 ('askOptions',   'Ask options',         False, 'say', '@conversations=ASK/ABOUT', 'A list of responses to ASK/ABOUT.'),
                 ('tellOptions',  'Ask options',         False, 'say', '@conversations=ASK/ABOUT', 'A list of responses to TELL/ABOUT.'),
+                ('give',         'Give',                False, 'lnk', '', 'Giving'),
             ],
         },
 

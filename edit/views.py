@@ -77,6 +77,18 @@ def item_added_nowhere(request):
     new_object.set_attr('gender', 'thirdperson')
     return redirect('/edit/object/' + str(new_object.id))
 
+
+def link_added(request, object_id):
+    qobject = get_object_or_404(QObject, pk=object_id)
+    name = request.POST['__name__']
+    item = request.POST['__giveitems__']
+    success = request.POST['__success__']
+    response = request.POST['__response__']
+
+
+    new_object = ItemToItemLinks.objects.create(primary_object=name, secondary_object=item, success=success, response=response, link_type='give')
+    return redirect('/edit/object/' + str(item.id))
+
     
 def exit_added(request, object_id):
     print('=============================================')

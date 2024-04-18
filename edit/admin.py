@@ -9,3 +9,5 @@ admin.site.register(QObject)
 admin.site.register(QAttr)
 admin.site.register(MetaPage)
 admin.site.register(MetaAttr)
+admin.site.register(ItemToItemLinks)
+
