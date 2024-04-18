@@ -562,14 +562,21 @@ class QObject(models.Model):
                     s += 'script:function(p) {\n msg("'
                     s += element.response
                     s += '")\n'
-                    s += 'util.giveitem(p)\n}'
+                    s += 'util.giveItem(p)\n'
+                    s += 'return true \n } \n'
                 else:
-                    s += 'msg:"'
+                    s += 'script:function(p) {\n msg("'
                     s += element.response
-                    s += '",'
-                    s += '\nfailed:true,\n}'
+                    s += '")\n'
+                    s += 'return false \n } \n'
+
+                    # s += 'msg:"'
+                    # s += element.response
+                    # s += '",'
+                    # s += '\nfailed:true,\n}'
                 s += '},\n'
             s += '],\n'
+            #s += 'receiveItems:[\n{\n item:"hat", script:function(p) { \n msg("\'Oh!\' says Kyle. \'Is this a hat?\'") \n util.giveItem(p) \n return true\n} \n },\n],'
 
         # exits
         if self.category == 'room':
